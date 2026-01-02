@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) Velocity BPA, LLC
+ * Licensed under the Business Source License 1.1
+ * Commercial use requires a separate commercial license.
+ * See LICENSE file for details.
+ */
+
+import type { IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
+import { Contract } from 'ethers';
+import { getProvider } from '../../transport/rpcProvider';
+import { getContractAddresses, type NetworkType } from '../../constants';
+import { DelegationManagerABI } from '../../contracts/DelegationManager.abi';
+import { validateAddress } from '../../utils/addressValidation';
+import { serializeResult } from '../../utils/bigNumberConversion';
+
+export async function getWithdrawableShares(
+	this: IExecuteFunctions,
+	index: number,
+): Promise<INodeExecutionData[]> {
+	const network = this.getNodeParameter('network', index, 'mainnet') as NetworkType;
+	const stakerAddress = this.getNodeParameter('stakerAddress', index) as string;
+	const strategies = this.getNodeParameter('strategies', index) as string[];
+	validateAddress(stakerAddress, 'stakerAddress');
+	const provider = await getProvider(this, index);
+	const addresses = getContractAddresses(network);
+
+	const contract = new Contract(
+		addresses.DelegationManager,
+		DelegationManagerABI,
+		provider,
+	);
+
+	const shares = await contract.getWithdrawableShares(stakerAddress, strategies);
+
+	return [
+		{
+			json: serializeResult({
+				staker: stakerAddress,
+				strategies,
+				shares: shares.map((s: bigint) => s.toString()),
+				network,
+			}),
+			pairedItem: { item: index },
+		},
+	];
+}

@@ -1,0 +1,22 @@
+{
+  "node": "n8n-nodes-base.eigenLayer",
+  "nodeVersion": "1.0",
+  "codexVersion": "1.0",
+  "categories": ["Finance & Accounting", "Development"],
+  "resources": {
+    "credentialDocumentation": [
+      {
+        "url": "https://docs.eigenlayer.xyz/"
+      }
+    ],
+    "primaryDocumentation": [
+      {
+        "url": "https://github.com/Velocity-BPA/n8n-nodes-eigenlayer#readme"
+      }
+    ]
+  },
+  "alias": ["ethereum", "restaking", "defi", "avs", "web3", "staking"],
+  "subcategories": {
+    "Finance & Accounting": ["Blockchain"]
+  }
+}

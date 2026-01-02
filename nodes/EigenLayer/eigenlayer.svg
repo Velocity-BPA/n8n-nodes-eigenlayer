@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">
+  <defs>
+    <linearGradient id="eigenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect width="60" height="60" rx="12" fill="url(#eigenGrad)"/>
+  <g fill="white">
+    <rect x="15" y="15" width="30" height="5" rx="2"/>
+    <rect x="15" y="27.5" width="25" height="5" rx="2"/>
+    <rect x="15" y="40" width="20" height="5" rx="2"/>
+  </g>
+</svg>

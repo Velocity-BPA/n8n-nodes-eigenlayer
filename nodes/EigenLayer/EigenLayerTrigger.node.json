@@ -1,0 +1,18 @@
+{
+  "node": "n8n-nodes-eigenlayer.eigenLayerTrigger",
+  "nodeVersion": "1.0",
+  "codexVersion": "1.0",
+  "categories": ["Blockchain", "DeFi"],
+  "resources": {
+    "credentialDocumentation": [
+      {
+        "url": "https://docs.eigenlayer.xyz"
+      }
+    ],
+    "primaryDocumentation": [
+      {
+        "url": "https://github.com/Velocity-BPA/n8n-nodes-eigenlayer"
+      }
+    ]
+  }
+}

@@ -1,44 +1,60 @@
 # Dependencies
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Build output
+# Build outputs
 dist/
+build/
 
-# IDE
-.idea/
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage/
+*.lcov
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+.nyc_output
+
+# IDE files
 .vscode/
+.idea/
 *.swp
 *.swo
 *~
 
-# OS
+# OS files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Compiled JavaScript (exclude config files)
+*.js
+!jest.config.js
+!gulpfile.js
+!.eslintrc.js
 
-# Coverage
-coverage/
-.nyc_output/
-
-# Environment
-.env
-.env.local
-.env.*.local
-
-# Package manager locks (keep one)
-yarn.lock
-pnpm-lock.yaml
-
-# Testing
-.jest/
-*.lcov
-
-# Misc
-*.tgz
-*.bak
-*.tmp
+# TypeScript cache
+*.tsbuildinfo

@@ -1,1113 +1,2053 @@
-/*
- * Copyright (c) Velocity BPA, LLC
- * Licensed under the Business Source License 1.1
- * Commercial use requires a separate commercial license.
- * See LICENSE file for details.
+/**
+ * Copyright (c) 2026 Velocity BPA
+ * 
+ * Licensed under the Business Source License 1.1 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     https://github.com/VelocityBPA/n8n-nodes-eigenlayer/blob/main/LICENSE
+ * 
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-import type {
-	IExecuteFunctions,
-	INodeExecutionData,
-	INodeType,
-	INodeTypeDescription,
+import {
+  IExecuteFunctions,
+  INodeExecutionData,
+  INodeType,
+  INodeTypeDescription,
+  NodeOperationError,
+  NodeApiError,
 } from 'n8n-workflow';
-import { NodeOperationError } from 'n8n-workflow';
-
-// Strategy Manager operations
-import { getStakerDeposits } from './actions/strategyManager/getStakerDeposits.operation';
-import { getStakerStrategyShares } from './actions/strategyManager/getStakerStrategyShares.operation';
-import { depositIntoStrategy } from './actions/strategyManager/depositIntoStrategy.operation';
-
-// Delegation Manager operations
-import { getDelegatedOperator } from './actions/delegationManager/getDelegatedOperator.operation';
-import { isDelegated } from './actions/delegationManager/isDelegated.operation';
-import { isOperator } from './actions/delegationManager/isOperator.operation';
-import { getOperatorDetails } from './actions/delegationManager/getOperatorDetails.operation';
-import { getOperatorShares } from './actions/delegationManager/getOperatorShares.operation';
-import { getWithdrawableShares } from './actions/delegationManager/getWithdrawableShares.operation';
-import { registerAsOperator } from './actions/delegationManager/registerAsOperator.operation';
-import { delegateTo } from './actions/delegationManager/delegateTo.operation';
-import { undelegate } from './actions/delegationManager/undelegate.operation';
-import { queueWithdrawals } from './actions/delegationManager/queueWithdrawals.operation';
-import { completeQueuedWithdrawal } from './actions/delegationManager/completeQueuedWithdrawal.operation';
-
-// EigenPod Manager operations
-import { getEigenPod } from './actions/eigenPodManager/getEigenPod.operation';
-import { hasPod } from './actions/eigenPodManager/hasPod.operation';
-import { getPodOwnerShares } from './actions/eigenPodManager/getPodOwnerShares.operation';
-import { createPod } from './actions/eigenPodManager/createPod.operation';
-import { stake } from './actions/eigenPodManager/stake.operation';
-
-// EigenPod operations
-import { getPodOwner } from './actions/eigenPod/getPodOwner.operation';
-import { getValidatorStatus } from './actions/eigenPod/getValidatorStatus.operation';
-import { activateRestaking } from './actions/eigenPod/activateRestaking.operation';
-
-// AVS Directory operations
-import { getOperatorAvsStatus } from './actions/avsDirectory/getOperatorAvsStatus.operation';
-import { registerOperatorToAvs } from './actions/avsDirectory/registerOperatorToAvs.operation';
-import { deregisterOperatorFromAvs } from './actions/avsDirectory/deregisterOperatorFromAvs.operation';
-
-// Rewards Coordinator operations
-import { getCumulativeClaimed } from './actions/rewardsCoordinator/getCumulativeClaimed.operation';
-import { getClaimerFor } from './actions/rewardsCoordinator/getClaimerFor.operation';
-import { processClaim } from './actions/rewardsCoordinator/processClaim.operation';
-import { setClaimerFor } from './actions/rewardsCoordinator/setClaimerFor.operation';
-
-// Allocation Manager operations
-import { getEncumberedMagnitude } from './actions/allocationManager/getEncumberedMagnitude.operation';
-import { getAllocation } from './actions/allocationManager/getAllocation.operation';
-import { modifyAllocations } from './actions/allocationManager/modifyAllocations.operation';
-
-// Strategy operations
-import { getTotalShares } from './actions/strategy/getTotalShares.operation';
-import { getUnderlyingToken } from './actions/strategy/getUnderlyingToken.operation';
-import { sharesToUnderlying } from './actions/strategy/sharesToUnderlying.operation';
-import { underlyingToShares } from './actions/strategy/underlyingToShares.operation';
-
-// Multicall operations
-import { batchRead } from './actions/multicall/batchRead.operation';
-import { getStakerPortfolio } from './actions/multicall/getStakerPortfolio.operation';
-import { getOperatorSummary } from './actions/multicall/getOperatorSummary.operation';
 
 export class EigenLayer implements INodeType {
-	description: INodeTypeDescription = {
-		displayName: 'EigenLayer',
-		name: 'eigenLayer',
-		icon: 'file:eigenlayer.svg',
-		group: ['transform'],
-		version: 1,
-		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Interact with the EigenLayer restaking protocol',
-		defaults: {
-			name: 'EigenLayer',
-		},
-		inputs: ['main'],
-		outputs: ['main'],
-		credentials: [
-			{
-				name: 'ethereumRpc',
-				required: true,
-			},
-			{
-				name: 'ethereumWallet',
-				required: false,
-				displayOptions: {
-					show: {
-						operation: [
-							'depositIntoStrategy',
-							'registerAsOperator',
-							'delegateTo',
-							'undelegate',
-							'queueWithdrawals',
-							'completeQueuedWithdrawal',
-							'createPod',
-							'stake',
-							'activateRestaking',
-							'registerOperatorToAvs',
-							'deregisterOperatorFromAvs',
-							'processClaim',
-							'setClaimerFor',
-							'modifyAllocations',
-						],
-					},
-				},
-			},
-		],
-		properties: [
-			{
-				displayName: 'Resource',
-				name: 'resource',
-				type: 'options',
-				noDataExpression: true,
-				options: [
-					{
-						name: 'Strategy Manager',
-						value: 'strategyManager',
-						description: 'Manage strategy deposits and withdrawals',
-					},
-					{
-						name: 'Delegation Manager',
-						value: 'delegationManager',
-						description: 'Manage delegations and operators',
-					},
-					{
-						name: 'EigenPod Manager',
-						value: 'eigenPodManager',
-						description: 'Manage EigenPods for native ETH restaking',
-					},
-					{
-						name: 'EigenPod',
-						value: 'eigenPod',
-						description: 'Individual EigenPod operations',
-					},
-					{
-						name: 'AVS Directory',
-						value: 'avsDirectory',
-						description: 'Manage AVS registrations',
-					},
-					{
-						name: 'Rewards Coordinator',
-						value: 'rewardsCoordinator',
-						description: 'Claim and manage rewards',
-					},
-					{
-						name: 'Allocation Manager',
-						value: 'allocationManager',
-						description: 'Manage stake allocations and slashing',
-					},
-					{
-						name: 'Strategy',
-						value: 'strategy',
-						description: 'Query individual strategy data',
-					},
-					{
-						name: 'Multicall',
-						value: 'multicall',
-						description: 'Batch operations and aggregated queries',
-					},
-				],
-				default: 'strategyManager',
-			},
-			// Strategy Manager Operations
-			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				displayOptions: {
-					show: {
-						resource: ['strategyManager'],
-					},
-				},
-				options: [
-					{
-						name: 'Get Staker Deposits',
-						value: 'getStakerDeposits',
-						description: 'Get all strategy deposits for an address',
-						action: 'Get staker deposits',
-					},
-					{
-						name: 'Get Staker Strategy Shares',
-						value: 'getStakerStrategyShares',
-						description: 'Get shares in a specific strategy',
-						action: 'Get staker strategy shares',
-					},
-					{
-						name: 'Deposit Into Strategy',
-						value: 'depositIntoStrategy',
-						description: 'Deposit tokens into a whitelisted strategy',
-						action: 'Deposit into strategy',
-					},
-				],
-				default: 'getStakerDeposits',
-			},
-			// Delegation Manager Operations
-			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				displayOptions: {
-					show: {
-						resource: ['delegationManager'],
-					},
-				},
-				options: [
-					{
-						name: 'Get Delegated Operator',
-						value: 'getDelegatedOperator',
-						description: 'Get the operator address a staker is delegated to',
-						action: 'Get delegated operator',
-					},
-					{
-						name: 'Is Delegated',
-						value: 'isDelegated',
-						description: 'Check if a staker is delegated',
-						action: 'Is delegated',
-					},
-					{
-						name: 'Is Operator',
-						value: 'isOperator',
-						description: 'Check if an address is a registered operator',
-						action: 'Is operator',
-					},
-					{
-						name: 'Get Operator Details',
-						value: 'getOperatorDetails',
-						description: 'Get operator configuration and metadata',
-						action: 'Get operator details',
-					},
-					{
-						name: 'Get Operator Shares',
-						value: 'getOperatorShares',
-						description: 'Get total shares delegated to an operator',
-						action: 'Get operator shares',
-					},
-					{
-						name: 'Get Withdrawable Shares',
-						value: 'getWithdrawableShares',
-						description: 'Get shares available for withdrawal',
-						action: 'Get withdrawable shares',
-					},
-					{
-						name: 'Register As Operator',
-						value: 'registerAsOperator',
-						description: 'Register an address as an operator',
-						action: 'Register as operator',
-					},
-					{
-						name: 'Delegate To',
-						value: 'delegateTo',
-						description: 'Delegate restaked assets to an operator',
-						action: 'Delegate to',
-					},
-					{
-						name: 'Undelegate',
-						value: 'undelegate',
-						description: 'Remove delegation and queue withdrawal',
-						action: 'Undelegate',
-					},
-					{
-						name: 'Queue Withdrawals',
-						value: 'queueWithdrawals',
-						description: 'Initiate withdrawal escrow',
-						action: 'Queue withdrawals',
-					},
-					{
-						name: 'Complete Queued Withdrawal',
-						value: 'completeQueuedWithdrawal',
-						description: 'Finalize withdrawal after delay',
-						action: 'Complete queued withdrawal',
-					},
-				],
-				default: 'getDelegatedOperator',
-			},
-			// EigenPod Manager Operations
-			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				displayOptions: {
-					show: {
-						resource: ['eigenPodManager'],
-					},
-				},
-				options: [
-					{
-						name: 'Get EigenPod',
-						value: 'getEigenPod',
-						description: "Get a staker's EigenPod address",
-						action: 'Get eigenpod',
-					},
-					{
-						name: 'Has Pod',
-						value: 'hasPod',
-						description: 'Check if a staker has deployed an EigenPod',
-						action: 'Has pod',
-					},
-					{
-						name: 'Get Pod Owner Shares',
-						value: 'getPodOwnerShares',
-						description: 'Get beacon chain ETH shares for a pod owner',
-						action: 'Get pod owner shares',
-					},
-					{
-						name: 'Create Pod',
-						value: 'createPod',
-						description: 'Deploy a new EigenPod',
-						action: 'Create pod',
-					},
-					{
-						name: 'Stake',
-						value: 'stake',
-						description: 'Stake ETH through EigenPod',
-						action: 'Stake',
-					},
-				],
-				default: 'getEigenPod',
-			},
-			// EigenPod Operations
-			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				displayOptions: {
-					show: {
-						resource: ['eigenPod'],
-					},
-				},
-				options: [
-					{
-						name: 'Get Pod Owner',
-						value: 'getPodOwner',
-						description: 'Get the owner of an EigenPod',
-						action: 'Get pod owner',
-					},
-					{
-						name: 'Get Validator Status',
-						value: 'getValidatorStatus',
-						description: 'Get validator status by public key',
-						action: 'Get validator status',
-					},
-					{
-						name: 'Activate Restaking',
-						value: 'activateRestaking',
-						description: 'Enable restaking for an EigenPod',
-						action: 'Activate restaking',
-					},
-				],
-				default: 'getPodOwner',
-			},
-			// AVS Directory Operations
-			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				displayOptions: {
-					show: {
-						resource: ['avsDirectory'],
-					},
-				},
-				options: [
-					{
-						name: 'Get Operator AVS Status',
-						value: 'getOperatorAvsStatus',
-						description: "Check an operator's AVS registration status",
-						action: 'Get operator avs status',
-					},
-					{
-						name: 'Register Operator To AVS',
-						value: 'registerOperatorToAvs',
-						description: 'Register an operator with an AVS',
-						action: 'Register operator to avs',
-					},
-					{
-						name: 'Deregister Operator From AVS',
-						value: 'deregisterOperatorFromAvs',
-						description: 'Deregister an operator from an AVS',
-						action: 'Deregister operator from avs',
-					},
-				],
-				default: 'getOperatorAvsStatus',
-			},
-			// Rewards Coordinator Operations
-			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				displayOptions: {
-					show: {
-						resource: ['rewardsCoordinator'],
-					},
-				},
-				options: [
-					{
-						name: 'Get Cumulative Claimed',
-						value: 'getCumulativeClaimed',
-						description: 'Get total rewards claimed by an earner',
-						action: 'Get cumulative claimed',
-					},
-					{
-						name: 'Get Claimer For',
-						value: 'getClaimerFor',
-						description: 'Get the authorized claimer for an earner',
-						action: 'Get claimer for',
-					},
-					{
-						name: 'Process Claim',
-						value: 'processClaim',
-						description: 'Claim earned rewards with merkle proof',
-						action: 'Process claim',
-					},
-					{
-						name: 'Set Claimer For',
-						value: 'setClaimerFor',
-						description: 'Designate a claimer address',
-						action: 'Set claimer for',
-					},
-				],
-				default: 'getCumulativeClaimed',
-			},
-			// Allocation Manager Operations
-			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				displayOptions: {
-					show: {
-						resource: ['allocationManager'],
-					},
-				},
-				options: [
-					{
-						name: 'Get Encumbered Magnitude',
-						value: 'getEncumberedMagnitude',
-						description: 'Get magnitude subject to slashing',
-						action: 'Get encumbered magnitude',
-					},
-					{
-						name: 'Get Allocation',
-						value: 'getAllocation',
-						description: 'Get stake allocation to an operator set',
-						action: 'Get allocation',
-					},
-					{
-						name: 'Modify Allocations',
-						value: 'modifyAllocations',
-						description: 'Modify AVS allocations',
-						action: 'Modify allocations',
-					},
-				],
-				default: 'getEncumberedMagnitude',
-			},
-			// Strategy Operations
-			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				displayOptions: {
-					show: {
-						resource: ['strategy'],
-					},
-				},
-				options: [
-					{
-						name: 'Get Total Shares',
-						value: 'getTotalShares',
-						description: 'Get total shares in a strategy',
-						action: 'Get total shares',
-					},
-					{
-						name: 'Get Underlying Token',
-						value: 'getUnderlyingToken',
-						description: "Get the strategy's underlying token address",
-						action: 'Get underlying token',
-					},
-					{
-						name: 'Shares To Underlying',
-						value: 'sharesToUnderlying',
-						description: 'Convert shares to underlying token amount',
-						action: 'Shares to underlying',
-					},
-					{
-						name: 'Underlying To Shares',
-						value: 'underlyingToShares',
-						description: 'Convert underlying token amount to shares',
-						action: 'Underlying to shares',
-					},
-				],
-				default: 'getTotalShares',
-			},
-			// Multicall Operations
-			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				displayOptions: {
-					show: {
-						resource: ['multicall'],
-					},
-				},
-				options: [
-					{
-						name: 'Batch Read',
-						value: 'batchRead',
-						description: 'Execute multiple read calls in a single request',
-						action: 'Batch read',
-					},
-					{
-						name: 'Get Staker Portfolio',
-						value: 'getStakerPortfolio',
-						description: 'Get all positions for an address',
-						action: 'Get staker portfolio',
-					},
-					{
-						name: 'Get Operator Summary',
-						value: 'getOperatorSummary',
-						description: 'Get complete operator data snapshot',
-						action: 'Get operator summary',
-					},
-				],
-				default: 'getStakerPortfolio',
-			},
-			// Common parameters
-			{
-				displayName: 'Staker Address',
-				name: 'stakerAddress',
-				type: 'string',
-				default: '',
-				placeholder: '0x...',
-				description: 'The Ethereum address of the staker',
-				displayOptions: {
-					show: {
-						operation: [
-							'getStakerDeposits',
-							'getStakerStrategyShares',
-							'getDelegatedOperator',
-							'isDelegated',
-							'getWithdrawableShares',
-							'delegateTo',
-							'undelegate',
-							'queueWithdrawals',
-							'getStakerPortfolio',
-						],
-					},
-				},
-			},
-			{
-				displayName: 'Operator Address',
-				name: 'operatorAddress',
-				type: 'string',
-				default: '',
-				placeholder: '0x...',
-				description: 'The Ethereum address of the operator',
-				displayOptions: {
-					show: {
-						operation: [
-							'isOperator',
-							'getOperatorDetails',
-							'getOperatorShares',
-							'delegateTo',
-							'getOperatorAvsStatus',
-							'registerOperatorToAvs',
-							'deregisterOperatorFromAvs',
-							'getEncumberedMagnitude',
-							'getAllocation',
-							'modifyAllocations',
-							'getOperatorSummary',
-						],
-					},
-				},
-			},
-			{
-				displayName: 'Strategy Address',
-				name: 'strategyAddress',
-				type: 'string',
-				default: '',
-				placeholder: '0x...',
-				description: 'The Ethereum address of the strategy contract',
-				displayOptions: {
-					show: {
-						operation: [
-							'getStakerStrategyShares',
-							'depositIntoStrategy',
-							'getOperatorShares',
-							'getTotalShares',
-							'getUnderlyingToken',
-							'sharesToUnderlying',
-							'underlyingToShares',
-							'getEncumberedMagnitude',
-							'getAllocation',
-						],
-					},
-				},
-			},
-			{
-				displayName: 'Pod Owner Address',
-				name: 'podOwnerAddress',
-				type: 'string',
-				default: '',
-				placeholder: '0x...',
-				description: 'The Ethereum address of the pod owner',
-				displayOptions: {
-					show: {
-						operation: ['getEigenPod', 'hasPod', 'getPodOwnerShares'],
-					},
-				},
-			},
-			{
-				displayName: 'EigenPod Address',
-				name: 'eigenPodAddress',
-				type: 'string',
-				default: '',
-				placeholder: '0x...',
-				description: 'The Ethereum address of the EigenPod',
-				displayOptions: {
-					show: {
-						operation: ['getPodOwner', 'getValidatorStatus', 'activateRestaking'],
-					},
-				},
-			},
-			{
-				displayName: 'AVS Address',
-				name: 'avsAddress',
-				type: 'string',
-				default: '',
-				placeholder: '0x...',
-				description: 'The Ethereum address of the AVS',
-				displayOptions: {
-					show: {
-						operation: [
-							'getOperatorAvsStatus',
-							'registerOperatorToAvs',
-							'deregisterOperatorFromAvs',
-							'getAllocation',
-						],
-					},
-				},
-			},
-			{
-				displayName: 'Earner Address',
-				name: 'earnerAddress',
-				type: 'string',
-				default: '',
-				placeholder: '0x...',
-				description: 'The Ethereum address of the reward earner',
-				displayOptions: {
-					show: {
-						operation: ['getCumulativeClaimed', 'getClaimerFor', 'processClaim', 'setClaimerFor'],
-					},
-				},
-			},
-			{
-				displayName: 'Token Address',
-				name: 'tokenAddress',
-				type: 'string',
-				default: '',
-				placeholder: '0x...',
-				description: 'The Ethereum address of the token',
-				displayOptions: {
-					show: {
-						operation: ['depositIntoStrategy', 'getCumulativeClaimed'],
-					},
-				},
-			},
-			{
-				displayName: 'Amount',
-				name: 'amount',
-				type: 'string',
-				default: '',
-				placeholder: '1000000000000000000',
-				description: 'Amount in wei (or smallest unit)',
-				displayOptions: {
-					show: {
-						operation: [
-							'depositIntoStrategy',
-							'stake',
-							'sharesToUnderlying',
-							'underlyingToShares',
-						],
-					},
-				},
-			},
-			{
-				displayName: 'Validator Public Key',
-				name: 'validatorPubkey',
-				type: 'string',
-				default: '',
-				placeholder: '0x...',
-				description: 'The validator public key (48 bytes, hex encoded)',
-				displayOptions: {
-					show: {
-						operation: ['getValidatorStatus', 'stake'],
-					},
-				},
-			},
-			{
-				displayName: 'Claimer Address',
-				name: 'claimerAddress',
-				type: 'string',
-				default: '',
-				placeholder: '0x...',
-				description: 'The address to set as claimer',
-				displayOptions: {
-					show: {
-						operation: ['setClaimerFor'],
-					},
-				},
-			},
-			{
-				displayName: 'Metadata URI',
-				name: 'metadataUri',
-				type: 'string',
-				default: '',
-				placeholder: 'https://...',
-				description: 'URI for operator metadata (JSON)',
-				displayOptions: {
-					show: {
-						operation: ['registerAsOperator'],
-					},
-				},
-			},
-			{
-				displayName: 'Delegation Approver',
-				name: 'delegationApprover',
-				type: 'string',
-				default: '0x0000000000000000000000000000000000000000',
-				placeholder: '0x...',
-				description: 'Address that must approve delegations (or zero address)',
-				displayOptions: {
-					show: {
-						operation: ['registerAsOperator'],
-					},
-				},
-			},
-			{
-				displayName: 'Allocation Delay',
-				name: 'allocationDelay',
-				type: 'number',
-				default: 0,
-				description: 'Delay in blocks for allocation changes',
-				displayOptions: {
-					show: {
-						operation: ['registerAsOperator'],
-					},
-				},
-			},
-			{
-				displayName: 'Strategies',
-				name: 'strategies',
-				type: 'string',
-				default: '',
-				placeholder: '0x...,0x...',
-				description: 'Comma-separated list of strategy addresses',
-				displayOptions: {
-					show: {
-						operation: ['getWithdrawableShares', 'queueWithdrawals', 'batchRead'],
-					},
-				},
-			},
-			{
-				displayName: 'Withdrawal Root',
-				name: 'withdrawalRoot',
-				type: 'string',
-				default: '',
-				placeholder: '0x...',
-				description: 'The withdrawal root hash (32 bytes)',
-				displayOptions: {
-					show: {
-						operation: ['completeQueuedWithdrawal'],
-					},
-				},
-			},
-			{
-				displayName: 'Receive As Tokens',
-				name: 'receiveAsTokens',
-				type: 'boolean',
-				default: true,
-				description: 'Whether to receive withdrawal as tokens (true) or shares (false)',
-				displayOptions: {
-					show: {
-						operation: ['completeQueuedWithdrawal'],
-					},
-				},
-			},
-			{
-				displayName: 'Deposit Data Root',
-				name: 'depositDataRoot',
-				type: 'string',
-				default: '',
-				placeholder: '0x...',
-				description: 'The deposit data root (32 bytes)',
-				displayOptions: {
-					show: {
-						operation: ['stake'],
-					},
-				},
-			},
-			{
-				displayName: 'Signature',
-				name: 'signature',
-				type: 'string',
-				default: '',
-				placeholder: '0x...',
-				description: 'The BLS signature for validator deposit',
-				displayOptions: {
-					show: {
-						operation: ['stake'],
-					},
-				},
-			},
-			{
-				displayName: 'Operator Set ID',
-				name: 'operatorSetId',
-				type: 'number',
-				default: 0,
-				description: 'The operator set identifier',
-				displayOptions: {
-					show: {
-						operation: ['getAllocation', 'modifyAllocations'],
-					},
-				},
-			},
-			{
-				displayName: 'New Magnitude',
-				name: 'newMagnitude',
-				type: 'string',
-				default: '',
-				description: 'The new magnitude value',
-				displayOptions: {
-					show: {
-						operation: ['modifyAllocations'],
-					},
-				},
-			},
-			// Batch read configuration
-			{
-				displayName: 'Calls JSON',
-				name: 'callsJson',
-				type: 'json',
-				default: '[]',
-				description: 'JSON array of call definitions for batch read',
-				displayOptions: {
-					show: {
-						operation: ['batchRead'],
-					},
-				},
-			},
-		],
-	};
+  description: INodeTypeDescription = {
+    displayName: 'EigenLayer',
+    name: 'eigenlayer',
+    icon: 'file:eigenlayer.svg',
+    group: ['transform'],
+    version: 1,
+    subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
+    description: 'Interact with the EigenLayer API',
+    defaults: {
+      name: 'EigenLayer',
+    },
+    inputs: ['main'],
+    outputs: ['main'],
+    credentials: [
+      {
+        name: 'eigenlayerApi',
+        required: true,
+      },
+    ],
+    properties: [
+      // Resource selector
+      {
+        displayName: 'Resource',
+        name: 'resource',
+        type: 'options',
+        noDataExpression: true,
+        options: [
+          {
+            name: 'Operators',
+            value: 'operators',
+          },
+          {
+            name: 'Delegations',
+            value: 'delegations',
+          },
+          {
+            name: 'EigenPods',
+            value: 'eigenPods',
+          },
+          {
+            name: 'AVS',
+            value: 'aVS',
+          },
+          {
+            name: 'Restaking',
+            value: 'restaking',
+          },
+          {
+            name: 'Rewards',
+            value: 'rewards',
+          }
+        ],
+        default: 'operators',
+      },
+      // Operation dropdowns per resource
+{
+  displayName: 'Operation',
+  name: 'operation',
+  type: 'options',
+  noDataExpression: true,
+  displayOptions: {
+    show: {
+      resource: ['operators'],
+    },
+  },
+  options: [
+    {
+      name: 'Get All Operators',
+      value: 'getAllOperators',
+      description: 'Retrieve list of all operators',
+      action: 'Get all operators',
+    },
+    {
+      name: 'Get Operator',
+      value: 'getOperator',
+      description: 'Get specific operator details',
+      action: 'Get operator details',
+    },
+    {
+      name: 'Get Operator Delegations',
+      value: 'getOperatorDelegations',
+      description: 'Get delegations for an operator',
+      action: 'Get operator delegations',
+    },
+    {
+      name: 'Get Operator AVS',
+      value: 'getOperatorAVS',
+      description: 'Get AVS registrations for an operator',
+      action: 'Get operator AVS registrations',
+    },
+  ],
+  default: 'getAllOperators',
+},
+{
+  displayName: 'Operation',
+  name: 'operation',
+  type: 'options',
+  noDataExpression: true,
+  displayOptions: {
+    show: {
+      resource: ['delegations'],
+    },
+  },
+  options: [
+    {
+      name: 'Get All Delegations',
+      value: 'getAllDelegations',
+      description: 'Retrieve all delegations',
+      action: 'Get all delegations',
+    },
+    {
+      name: 'Get Staker Delegations',
+      value: 'getStakerDelegations',
+      description: 'Get delegations for a specific staker',
+      action: 'Get staker delegations',
+    },
+    {
+      name: 'Get Delegated Operator',
+      value: 'getDelegatedOperator',
+      description: 'Get operator that staker has delegated to',
+      action: 'Get delegated operator',
+    },
+    {
+      name: 'Get Delegation Rewards',
+      value: 'getDelegationRewards',
+      description: 'Get delegation reward information',
+      action: 'Get delegation rewards',
+    },
+  ],
+  default: 'getAllDelegations',
+},
+{
+  displayName: 'Operation',
+  name: 'operation',
+  type: 'options',
+  noDataExpression: true,
+  displayOptions: {
+    show: {
+      resource: ['eigenPods'],
+    },
+  },
+  options: [
+    {
+      name: 'Get All EigenPods',
+      value: 'getAllEigenPods',
+      description: 'Retrieve list of EigenPods',
+      action: 'Get all EigenPods',
+    },
+    {
+      name: 'Get EigenPod',
+      value: 'getEigenPod',
+      description: 'Get specific EigenPod details',
+      action: 'Get EigenPod details',
+    },
+    {
+      name: 'Get EigenPod Validators',
+      value: 'getEigenPodValidators',
+      description: 'Get validators for an EigenPod',
+      action: 'Get EigenPod validators',
+    },
+    {
+      name: 'Get EigenPod Withdrawals',
+      value: 'getEigenPodWithdrawals',
+      description: 'Get withdrawal history for EigenPod',
+      action: 'Get EigenPod withdrawals',
+    },
+  ],
+  default: 'getAllEigenPods',
+},
+{
+  displayName: 'Operation',
+  name: 'operation',
+  type: 'options',
+  noDataExpression: true,
+  displayOptions: {
+    show: {
+      resource: ['aVS'],
+    },
+  },
+  options: [
+    {
+      name: 'Get All AVS',
+      value: 'getAllAVS',
+      description: 'Retrieve list of all Actively Validated Services',
+      action: 'Get all AVS',
+    },
+    {
+      name: 'Get AVS',
+      value: 'getAVS',
+      description: 'Get specific AVS details by address',
+      action: 'Get AVS details',
+    },
+    {
+      name: 'Get AVS Operators',
+      value: 'getAVSOperators',
+      description: 'Get operators registered to an AVS',
+      action: 'Get AVS operators',
+    },
+    {
+      name: 'Get AVS Rewards',
+      value: 'getAVSRewards',
+      description: 'Get reward information for an AVS',
+      action: 'Get AVS rewards',
+    },
+  ],
+  default: 'getAllAVS',
+},
+{
+  displayName: 'Operation',
+  name: 'operation',
+  type: 'options',
+  noDataExpression: true,
+  displayOptions: {
+    show: {
+      resource: ['restaking'],
+    },
+  },
+  options: [
+    {
+      name: 'Get Strategies',
+      value: 'getStrategies',
+      description: 'Get available restaking strategies',
+      action: 'Get available restaking strategies',
+    },
+    {
+      name: 'Get Deposits',
+      value: 'getDeposits',
+      description: 'Get deposit history',
+      action: 'Get deposit history',
+    },
+    {
+      name: 'Get Withdrawals',
+      value: 'getWithdrawals',
+      description: 'Get withdrawal history',
+      action: 'Get withdrawal history',
+    },
+    {
+      name: 'Get Staker Balances',
+      value: 'getStakerBalances',
+      description: 'Get staking balances for a staker',
+      action: 'Get staker balances',
+    },
+  ],
+  default: 'getStrategies',
+},
+{
+  displayName: 'Operation',
+  name: 'operation',
+  type: 'options',
+  noDataExpression: true,
+  displayOptions: {
+    show: {
+      resource: ['rewards'],
+    },
+  },
+  options: [
+    {
+      name: 'Get All Rewards',
+      value: 'getAllRewards',
+      description: 'Get rewards across the protocol',
+      action: 'Get all rewards',
+    },
+    {
+      name: 'Get Address Rewards',
+      value: 'getAddressRewards',
+      description: 'Get rewards for specific address',
+      action: 'Get address rewards',
+    },
+    {
+      name: 'Get Reward Distributions',
+      value: 'getRewardDistributions',
+      description: 'Get reward distribution events',
+      action: 'Get reward distributions',
+    },
+    {
+      name: 'Get Reward Claims',
+      value: 'getRewardClaims',
+      description: 'Get reward claim history',
+      action: 'Get reward claims',
+    },
+  ],
+  default: 'getAllRewards',
+},
+      // Parameter definitions
+{
+  displayName: 'Limit',
+  name: 'limit',
+  type: 'number',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['operators'],
+      operation: ['getAllOperators'],
+    },
+  },
+  default: 100,
+  description: 'Maximum number of operators to return',
+},
+{
+  displayName: 'Offset',
+  name: 'offset',
+  type: 'number',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['operators'],
+      operation: ['getAllOperators'],
+    },
+  },
+  default: 0,
+  description: 'Number of operators to skip',
+},
+{
+  displayName: 'Status',
+  name: 'status',
+  type: 'options',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['operators'],
+      operation: ['getAllOperators'],
+    },
+  },
+  options: [
+    {
+      name: 'Active',
+      value: 'active',
+    },
+    {
+      name: 'Inactive',
+      value: 'inactive',
+    },
+  ],
+  default: '',
+  description: 'Filter operators by status',
+},
+{
+  displayName: 'Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['operators'],
+      operation: ['getOperator'],
+    },
+  },
+  default: '',
+  description: 'The Ethereum address of the operator',
+},
+{
+  displayName: 'Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['operators'],
+      operation: ['getOperatorDelegations'],
+    },
+  },
+  default: '',
+  description: 'The Ethereum address of the operator',
+},
+{
+  displayName: 'Limit',
+  name: 'limit',
+  type: 'number',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['operators'],
+      operation: ['getOperatorDelegations'],
+    },
+  },
+  default: 100,
+  description: 'Maximum number of delegations to return',
+},
+{
+  displayName: 'Offset',
+  name: 'offset',
+  type: 'number',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['operators'],
+      operation: ['getOperatorDelegations'],
+    },
+  },
+  default: 0,
+  description: 'Number of delegations to skip',
+},
+{
+  displayName: 'Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['operators'],
+      operation: ['getOperatorAVS'],
+    },
+  },
+  default: '',
+  description: 'The Ethereum address of the operator',
+},
+{
+  displayName: 'Staker Address',
+  name: 'staker',
+  type: 'string',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['delegations'],
+      operation: ['getAllDelegations'],
+    },
+  },
+  default: '',
+  description: 'Filter delegations by staker address',
+},
+{
+  displayName: 'Operator Address',
+  name: 'operator',
+  type: 'string',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['delegations'],
+      operation: ['getAllDelegations'],
+    },
+  },
+  default: '',
+  description: 'Filter delegations by operator address',
+},
+{
+  displayName: 'Limit',
+  name: 'limit',
+  type: 'number',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['delegations'],
+      operation: ['getAllDelegations'],
+    },
+  },
+  default: 100,
+  description: 'Maximum number of delegations to return',
+},
+{
+  displayName: 'Offset',
+  name: 'offset',
+  type: 'number',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['delegations'],
+      operation: ['getAllDelegations'],
+    },
+  },
+  default: 0,
+  description: 'Number of delegations to skip',
+},
+{
+  displayName: 'Staker Address',
+  name: 'staker',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['delegations'],
+      operation: ['getStakerDelegations'],
+    },
+  },
+  default: '',
+  description: 'The staker address to get delegations for',
+  placeholder: '0x1234567890123456789012345678901234567890',
+},
+{
+  displayName: 'Staker Address',
+  name: 'staker',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['delegations'],
+      operation: ['getDelegatedOperator'],
+    },
+  },
+  default: '',
+  description: 'The staker address to get the delegated operator for',
+  placeholder: '0x1234567890123456789012345678901234567890',
+},
+{
+  displayName: 'Staker Address',
+  name: 'staker',
+  type: 'string',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['delegations'],
+      operation: ['getDelegationRewards'],
+    },
+  },
+  default: '',
+  description: 'Filter rewards by staker address',
+  placeholder: '0x1234567890123456789012345678901234567890',
+},
+{
+  displayName: 'Operator Address',
+  name: 'operator',
+  type: 'string',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['delegations'],
+      operation: ['getDelegationRewards'],
+    },
+  },
+  default: '',
+  description: 'Filter rewards by operator address',
+  placeholder: '0x1234567890123456789012345678901234567890',
+},
+{
+  displayName: 'Owner Address',
+  name: 'owner',
+  type: 'string',
+  displayOptions: {
+    show: {
+      resource: ['eigenPods'],
+      operation: ['getAllEigenPods'],
+    },
+  },
+  default: '',
+  description: 'Filter EigenPods by owner address',
+},
+{
+  displayName: 'Status',
+  name: 'status',
+  type: 'options',
+  displayOptions: {
+    show: {
+      resource: ['eigenPods'],
+      operation: ['getAllEigenPods'],
+    },
+  },
+  options: [
+    {
+      name: 'Active',
+      value: 'active',
+    },
+    {
+      name: 'Inactive',
+      value: 'inactive',
+    },
+    {
+      name: 'All',
+      value: '',
+    },
+  ],
+  default: '',
+  description: 'Filter EigenPods by status',
+},
+{
+  displayName: 'Limit',
+  name: 'limit',
+  type: 'number',
+  displayOptions: {
+    show: {
+      resource: ['eigenPods'],
+      operation: ['getAllEigenPods'],
+    },
+  },
+  typeOptions: {
+    minValue: 1,
+    maxValue: 1000,
+  },
+  default: 100,
+  description: 'Maximum number of EigenPods to retrieve',
+},
+{
+  displayName: 'Offset',
+  name: 'offset',
+  type: 'number',
+  displayOptions: {
+    show: {
+      resource: ['eigenPods'],
+      operation: ['getAllEigenPods'],
+    },
+  },
+  typeOptions: {
+    minValue: 0,
+  },
+  default: 0,
+  description: 'Number of EigenPods to skip',
+},
+{
+  displayName: 'EigenPod Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['eigenPods'],
+      operation: ['getEigenPod'],
+    },
+  },
+  default: '',
+  description: 'The EigenPod contract address',
+  placeholder: '0x...',
+},
+{
+  displayName: 'EigenPod Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['eigenPods'],
+      operation: ['getEigenPodValidators'],
+    },
+  },
+  default: '',
+  description: 'The EigenPod contract address',
+  placeholder: '0x...',
+},
+{
+  displayName: 'Validator Status',
+  name: 'validatorStatus',
+  type: 'options',
+  displayOptions: {
+    show: {
+      resource: ['eigenPods'],
+      operation: ['getEigenPodValidators'],
+    },
+  },
+  options: [
+    {
+      name: 'Active',
+      value: 'active',
+    },
+    {
+      name: 'Exited',
+      value: 'exited',
+    },
+    {
+      name: 'Slashed',
+      value: 'slashed',
+    },
+    {
+      name: 'All',
+      value: '',
+    },
+  ],
+  default: '',
+  description: 'Filter validators by status',
+},
+{
+  displayName: 'EigenPod Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['eigenPods'],
+      operation: ['getEigenPodWithdrawals'],
+    },
+  },
+  default: '',
+  description: 'The EigenPod contract address',
+  placeholder: '0x...',
+},
+{
+  displayName: 'Limit',
+  name: 'limit',
+  type: 'number',
+  displayOptions: {
+    show: {
+      resource: ['aVS'],
+      operation: ['getAllAVS'],
+    },
+  },
+  default: 100,
+  description: 'Maximum number of AVS to return',
+  typeOptions: {
+    minValue: 1,
+    maxValue: 1000,
+  },
+},
+{
+  displayName: 'Offset',
+  name: 'offset',
+  type: 'number',
+  displayOptions: {
+    show: {
+      resource: ['aVS'],
+      operation: ['getAllAVS'],
+    },
+  },
+  default: 0,
+  description: 'Number of AVS to skip',
+  typeOptions: {
+    minValue: 0,
+  },
+},
+{
+  displayName: 'Status',
+  name: 'status',
+  type: 'options',
+  displayOptions: {
+    show: {
+      resource: ['aVS'],
+      operation: ['getAllAVS'],
+    },
+  },
+  options: [
+    {
+      name: 'All',
+      value: '',
+    },
+    {
+      name: 'Active',
+      value: 'active',
+    },
+    {
+      name: 'Inactive',
+      value: 'inactive',
+    },
+  ],
+  default: '',
+  description: 'Filter AVS by status',
+},
+{
+  displayName: 'Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['aVS'],
+      operation: ['getAVS'],
+    },
+  },
+  default: '',
+  description: 'The Ethereum address of the AVS',
+  placeholder: '0x...',
+},
+{
+  displayName: 'Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['aVS'],
+      operation: ['getAVSOperators'],
+    },
+  },
+  default: '',
+  description: 'The Ethereum address of the AVS',
+  placeholder: '0x...',
+},
+{
+  displayName: 'Limit',
+  name: 'limit',
+  type: 'number',
+  displayOptions: {
+    show: {
+      resource: ['aVS'],
+      operation: ['getAVSOperators'],
+    },
+  },
+  default: 100,
+  description: 'Maximum number of operators to return',
+  typeOptions: {
+    minValue: 1,
+    maxValue: 1000,
+  },
+},
+{
+  displayName: 'Offset',
+  name: 'offset',
+  type: 'number',
+  displayOptions: {
+    show: {
+      resource: ['aVS'],
+      operation: ['getAVSOperators'],
+    },
+  },
+  default: 0,
+  description: 'Number of operators to skip',
+  typeOptions: {
+    minValue: 0,
+  },
+},
+{
+  displayName: 'Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['aVS'],
+      operation: ['getAVSRewards'],
+    },
+  },
+  default: '',
+  description: 'The Ethereum address of the AVS',
+  placeholder: '0x...',
+},
+{
+  displayName: 'Epoch',
+  name: 'epoch',
+  type: 'number',
+  displayOptions: {
+    show: {
+      resource: ['aVS'],
+      operation: ['getAVSRewards'],
+    },
+  },
+  default: 0,
+  description: 'The epoch number for reward information. If 0, returns latest epoch',
+  typeOptions: {
+    minValue: 0,
+  },
+},
+{
+  displayName: 'Limit',
+  name: 'limit',
+  type: 'number',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['restaking'],
+      operation: ['getStrategies'],
+    },
+  },
+  default: 100,
+  description: 'Maximum number of strategies to return',
+  typeOptions: {
+    minValue: 1,
+    maxValue: 1000,
+  },
+},
+{
+  displayName: 'Offset',
+  name: 'offset',
+  type: 'number',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['restaking'],
+      operation: ['getStrategies'],
+    },
+  },
+  default: 0,
+  description: 'Number of strategies to skip',
+  typeOptions: {
+    minValue: 0,
+  },
+},
+{
+  displayName: 'Staker Address',
+  name: 'staker',
+  type: 'string',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['restaking'],
+      operation: ['getDeposits'],
+    },
+  },
+  default: '',
+  description: 'Ethereum address of the staker to filter deposits',
+  placeholder: '0x...',
+},
+{
+  displayName: 'Strategy Address',
+  name: 'strategy',
+  type: 'string',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['restaking'],
+      operation: ['getDeposits'],
+    },
+  },
+  default: '',
+  description: 'Strategy contract address to filter deposits',
+  placeholder: '0x...',
+},
+{
+  displayName: 'Limit',
+  name: 'limit',
+  type: 'number',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['restaking'],
+      operation: ['getDeposits'],
+    },
+  },
+  default: 100,
+  description: 'Maximum number of deposits to return',
+  typeOptions: {
+    minValue: 1,
+    maxValue: 1000,
+  },
+},
+{
+  displayName: 'Offset',
+  name: 'offset',
+  type: 'number',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['restaking'],
+      operation: ['getDeposits'],
+    },
+  },
+  default: 0,
+  description: 'Number of deposits to skip',
+  typeOptions: {
+    minValue: 0,
+  },
+},
+{
+  displayName: 'Staker Address',
+  name: 'staker',
+  type: 'string',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['restaking'],
+      operation: ['getWithdrawals'],
+    },
+  },
+  default: '',
+  description: 'Ethereum address of the staker to filter withdrawals',
+  placeholder: '0x...',
+},
+{
+  displayName: 'Strategy Address',
+  name: 'strategy',
+  type: 'string',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['restaking'],
+      operation: ['getWithdrawals'],
+    },
+  },
+  default: '',
+  description: 'Strategy contract address to filter withdrawals',
+  placeholder: '0x...',
+},
+{
+  displayName: 'Status',
+  name: 'status',
+  type: 'options',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['restaking'],
+      operation: ['getWithdrawals'],
+    },
+  },
+  options: [
+    {
+      name: 'All',
+      value: '',
+    },
+    {
+      name: 'Pending',
+      value: 'pending',
+    },
+    {
+      name: 'Completed',
+      value: 'completed',
+    },
+    {
+      name: 'Failed',
+      value: 'failed',
+    },
+  ],
+  default: '',
+  description: 'Filter withdrawals by status',
+},
+{
+  displayName: 'Staker Address',
+  name: 'staker',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['restaking'],
+      operation: ['getStakerBalances'],
+    },
+  },
+  default: '',
+  description: 'Ethereum address of the staker',
+  placeholder: '0x...',
+},
+{
+  displayName: 'Strategy Address',
+  name: 'strategy',
+  type: 'string',
+  required: false,
+  displayOptions: {
+    show: {
+      resource: ['restaking'],
+      operation: ['getStakerBalances'],
+    },
+  },
+  default: '',
+  description: 'Strategy contract address to filter balances',
+  placeholder: '0x...',
+},
+{
+  displayName: 'Recipient',
+  name: 'recipient',
+  type: 'string',
+  displayOptions: {
+    show: {
+      resource: ['rewards'],
+      operation: ['getAllRewards'],
+    },
+  },
+  default: '',
+  description: 'Filter rewards by recipient address',
+},
+{
+  displayName: 'AVS',
+  name: 'avs',
+  type: 'string',
+  displayOptions: {
+    show: {
+      resource: ['rewards'],
+      operation: ['getAllRewards'],
+    },
+  },
+  default: '',
+  description: 'Filter rewards by AVS address',
+},
+{
+  displayName: 'Limit',
+  name: 'limit',
+  type: 'number',
+  displayOptions: {
+    show: {
+      resource: ['rewards'],
+      operation: ['getAllRewards'],
+    },
+  },
+  default: 100,
+  description: 'Maximum number of records to return',
+},
+{
+  displayName: 'Offset',
+  name: 'offset',
+  type: 'number',
+  displayOptions: {
+    show: {
+      resource: ['rewards'],
+      operation: ['getAllRewards'],
+    },
+  },
+  default: 0,
+  description: 'Number of records to skip',
+},
+{
+  displayName: 'Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['rewards'],
+      operation: ['getAddressRewards'],
+    },
+  },
+  default: '',
+  description: 'The Ethereum address to get rewards for',
+},
+{
+  displayName: 'Epoch',
+  name: 'epoch',
+  type: 'number',
+  displayOptions: {
+    show: {
+      resource: ['rewards'],
+      operation: ['getAddressRewards', 'getRewardDistributions'],
+    },
+  },
+  default: 0,
+  description: 'Filter by specific epoch',
+},
+{
+  displayName: 'AVS',
+  name: 'avs',
+  type: 'string',
+  displayOptions: {
+    show: {
+      resource: ['rewards'],
+      operation: ['getRewardDistributions'],
+    },
+  },
+  default: '',
+  description: 'Filter distributions by AVS address',
+},
+{
+  displayName: 'Recipient',
+  name: 'recipient',
+  type: 'string',
+  displayOptions: {
+    show: {
+      resource: ['rewards'],
+      operation: ['getRewardClaims'],
+    },
+  },
+  default: '',
+  description: 'Filter claims by recipient address',
+},
+{
+  displayName: 'Status',
+  name: 'status',
+  type: 'options',
+  options: [
+    {
+      name: 'All',
+      value: '',
+    },
+    {
+      name: 'Pending',
+      value: 'pending',
+    },
+    {
+      name: 'Completed',
+      value: 'completed',
+    },
+    {
+      name: 'Failed',
+      value: 'failed',
+    },
+  ],
+  displayOptions: {
+    show: {
+      resource: ['rewards'],
+      operation: ['getRewardClaims'],
+    },
+  },
+  default: '',
+  description: 'Filter claims by status',
+},
+    ],
+  };
 
-	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const items = this.getInputData();
-		const returnData: INodeExecutionData[] = [];
-		const resource = this.getNodeParameter('resource', 0) as string;
-		const operation = this.getNodeParameter('operation', 0) as string;
+  async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
+    const items = this.getInputData();
+    const resource = this.getNodeParameter('resource', 0) as string;
 
-		// Log licensing notice once per execution
-		this.logger.warn(
-			'[Velocity BPA Licensing Notice] This n8n node is licensed under the Business Source License 1.1 (BSL 1.1). Use of this node by for-profit organizations in production environments requires a commercial license from Velocity BPA. For licensing information, visit https://velobpa.com/licensing or contact licensing@velobpa.com.',
-		);
+    switch (resource) {
+      case 'operators':
+        return [await executeOperatorsOperations.call(this, items)];
+      case 'delegations':
+        return [await executeDelegationsOperations.call(this, items)];
+      case 'eigenPods':
+        return [await executeEigenPodsOperations.call(this, items)];
+      case 'aVS':
+        return [await executeAVSOperations.call(this, items)];
+      case 'restaking':
+        return [await executeRestakingOperations.call(this, items)];
+      case 'rewards':
+        return [await executeRewardsOperations.call(this, items)];
+      default:
+        throw new NodeOperationError(this.getNode(), `The resource "${resource}" is not supported`);
+    }
+  }
+}
 
-		for (let i = 0; i < items.length; i++) {
-			try {
-				let result: INodeExecutionData[];
+// ============================================================
+// Resource Handler Functions
+// ============================================================
 
-				switch (resource) {
-					case 'strategyManager':
-						switch (operation) {
-							case 'getStakerDeposits':
-								result = await getStakerDeposits.call(this, i);
-								break;
-							case 'getStakerStrategyShares':
-								result = await getStakerStrategyShares.call(this, i);
-								break;
-							case 'depositIntoStrategy':
-								result = await depositIntoStrategy.call(this, i);
-								break;
-							default:
-								throw new NodeOperationError(
-									this.getNode(),
-									`Unknown operation: ${operation}`,
-								);
-						}
-						break;
+async function executeOperatorsOperations(
+  this: IExecuteFunctions,
+  items: INodeExecutionData[],
+): Promise<INodeExecutionData[]> {
+  const returnData: INodeExecutionData[] = [];
+  const operation = this.getNodeParameter('operation', 0) as string;
+  const credentials = await this.getCredentials('eigenlayerApi') as any;
 
-					case 'delegationManager':
-						switch (operation) {
-							case 'getDelegatedOperator':
-								result = await getDelegatedOperator.call(this, i);
-								break;
-							case 'isDelegated':
-								result = await isDelegated.call(this, i);
-								break;
-							case 'isOperator':
-								result = await isOperator.call(this, i);
-								break;
-							case 'getOperatorDetails':
-								result = await getOperatorDetails.call(this, i);
-								break;
-							case 'getOperatorShares':
-								result = await getOperatorShares.call(this, i);
-								break;
-							case 'getWithdrawableShares':
-								result = await getWithdrawableShares.call(this, i);
-								break;
-							case 'registerAsOperator':
-								result = await registerAsOperator.call(this, i);
-								break;
-							case 'delegateTo':
-								result = await delegateTo.call(this, i);
-								break;
-							case 'undelegate':
-								result = await undelegate.call(this, i);
-								break;
-							case 'queueWithdrawals':
-								result = await queueWithdrawals.call(this, i);
-								break;
-							case 'completeQueuedWithdrawal':
-								result = await completeQueuedWithdrawal.call(this, i);
-								break;
-							default:
-								throw new NodeOperationError(
-									this.getNode(),
-									`Unknown operation: ${operation}`,
-								);
-						}
-						break;
+  for (let i = 0; i < items.length; i++) {
+    try {
+      let result: any;
 
-					case 'eigenPodManager':
-						switch (operation) {
-							case 'getEigenPod':
-								result = await getEigenPod.call(this, i);
-								break;
-							case 'hasPod':
-								result = await hasPod.call(this, i);
-								break;
-							case 'getPodOwnerShares':
-								result = await getPodOwnerShares.call(this, i);
-								break;
-							case 'createPod':
-								result = await createPod.call(this, i);
-								break;
-							case 'stake':
-								result = await stake.call(this, i);
-								break;
-							default:
-								throw new NodeOperationError(
-									this.getNode(),
-									`Unknown operation: ${operation}`,
-								);
-						}
-						break;
+      switch (operation) {
+        case 'getAllOperators': {
+          const limit = this.getNodeParameter('limit', i) as number;
+          const offset = this.getNodeParameter('offset', i) as number;
+          const status = this.getNodeParameter('status', i) as string;
 
-					case 'eigenPod':
-						switch (operation) {
-							case 'getPodOwner':
-								result = await getPodOwner.call(this, i);
-								break;
-							case 'getValidatorStatus':
-								result = await getValidatorStatus.call(this, i);
-								break;
-							case 'activateRestaking':
-								result = await activateRestaking.call(this, i);
-								break;
-							default:
-								throw new NodeOperationError(
-									this.getNode(),
-									`Unknown operation: ${operation}`,
-								);
-						}
-						break;
+          const queryParams: any = {};
+          if (limit) queryParams.limit = limit.toString();
+          if (offset) queryParams.offset = offset.toString();
+          if (status) queryParams.status = status;
 
-					case 'avsDirectory':
-						switch (operation) {
-							case 'getOperatorAvsStatus':
-								result = await getOperatorAvsStatus.call(this, i);
-								break;
-							case 'registerOperatorToAvs':
-								result = await registerOperatorToAvs.call(this, i);
-								break;
-							case 'deregisterOperatorFromAvs':
-								result = await deregisterOperatorFromAvs.call(this, i);
-								break;
-							default:
-								throw new NodeOperationError(
-									this.getNode(),
-									`Unknown operation: ${operation}`,
-								);
-						}
-						break;
+          const queryString = new URLSearchParams(queryParams).toString();
+          const url = queryString ? 
+            `${credentials.baseUrl}/operators?${queryString}` : 
+            `${credentials.baseUrl}/operators`;
 
-					case 'rewardsCoordinator':
-						switch (operation) {
-							case 'getCumulativeClaimed':
-								result = await getCumulativeClaimed.call(this, i);
-								break;
-							case 'getClaimerFor':
-								result = await getClaimerFor.call(this, i);
-								break;
-							case 'processClaim':
-								result = await processClaim.call(this, i);
-								break;
-							case 'setClaimerFor':
-								result = await setClaimerFor.call(this, i);
-								break;
-							default:
-								throw new NodeOperationError(
-									this.getNode(),
-									`Unknown operation: ${operation}`,
-								);
-						}
-						break;
+          const options: any = {
+            method: 'GET',
+            url: url,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
 
-					case 'allocationManager':
-						switch (operation) {
-							case 'getEncumberedMagnitude':
-								result = await getEncumberedMagnitude.call(this, i);
-								break;
-							case 'getAllocation':
-								result = await getAllocation.call(this, i);
-								break;
-							case 'modifyAllocations':
-								result = await modifyAllocations.call(this, i);
-								break;
-							default:
-								throw new NodeOperationError(
-									this.getNode(),
-									`Unknown operation: ${operation}`,
-								);
-						}
-						break;
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
 
-					case 'strategy':
-						switch (operation) {
-							case 'getTotalShares':
-								result = await getTotalShares.call(this, i);
-								break;
-							case 'getUnderlyingToken':
-								result = await getUnderlyingToken.call(this, i);
-								break;
-							case 'sharesToUnderlying':
-								result = await sharesToUnderlying.call(this, i);
-								break;
-							case 'underlyingToShares':
-								result = await underlyingToShares.call(this, i);
-								break;
-							default:
-								throw new NodeOperationError(
-									this.getNode(),
-									`Unknown operation: ${operation}`,
-								);
-						}
-						break;
+        case 'getOperator': {
+          const address = this.getNodeParameter('address', i) as string;
 
-					case 'multicall':
-						switch (operation) {
-							case 'batchRead':
-								result = await batchRead.call(this, i);
-								break;
-							case 'getStakerPortfolio':
-								result = await getStakerPortfolio.call(this, i);
-								break;
-							case 'getOperatorSummary':
-								result = await getOperatorSummary.call(this, i);
-								break;
-							default:
-								throw new NodeOperationError(
-									this.getNode(),
-									`Unknown operation: ${operation}`,
-								);
-						}
-						break;
+          if (!address) {
+            throw new NodeOperationError(this.getNode(), 'Address is required');
+          }
 
-					default:
-						throw new NodeOperationError(this.getNode(), `Unknown resource: ${resource}`);
-				}
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/operators/${address}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
 
-				returnData.push(...result);
-			} catch (error) {
-				if (this.continueOnFail()) {
-					returnData.push({
-						json: {
-							error: error instanceof Error ? error.message : 'Unknown error',
-						},
-						pairedItem: { item: i },
-					});
-					continue;
-				}
-				throw error;
-			}
-		}
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
 
-		return [returnData];
-	}
+        case 'getOperatorDelegations': {
+          const address = this.getNodeParameter('address', i) as string;
+          const limit = this.getNodeParameter('limit', i) as number;
+          const offset = this.getNodeParameter('offset', i) as number;
+
+          if (!address) {
+            throw new NodeOperationError(this.getNode(), 'Address is required');
+          }
+
+          const queryParams: any = {};
+          if (limit) queryParams.limit = limit.toString();
+          if (offset) queryParams.offset = offset.toString();
+
+          const queryString = new URLSearchParams(queryParams).toString();
+          const url = queryString ? 
+            `${credentials.baseUrl}/operators/${address}/delegations?${queryString}` : 
+            `${credentials.baseUrl}/operators/${address}/delegations`;
+
+          const options: any = {
+            method: 'GET',
+            url: url,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getOperatorAVS': {
+          const address = this.getNodeParameter('address', i) as string;
+
+          if (!address) {
+            throw new NodeOperationError(this.getNode(), 'Address is required');
+          }
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/operators/${address}/avs`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        default:
+          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
+      }
+
+      returnData.push({ json: result, pairedItem: { item: i } });
+
+    } catch (error: any) {
+      if (this.continueOnFail()) {
+        returnData.push({
+          json: { error: error.message || 'Unknown error occurred' },
+          pairedItem: { item: i }
+        });
+      } else {
+        if (error.response) {
+          throw new NodeApiError(this.getNode(), error.response.body || error.response, { 
+            message: error.message,
+            httpCode: error.response.statusCode?.toString() || 'unknown',
+          });
+        }
+        throw new NodeOperationError(this.getNode(), error.message || 'Unknown error occurred');
+      }
+    }
+  }
+
+  return returnData;
+}
+
+async function executeDelegationsOperations(
+  this: IExecuteFunctions,
+  items: INodeExecutionData[],
+): Promise<INodeExecutionData[]> {
+  const returnData: INodeExecutionData[] = [];
+  const operation = this.getNodeParameter('operation', 0) as string;
+  const credentials = await this.getCredentials('eigenlayerApi') as any;
+
+  for (let i = 0; i < items.length; i++) {
+    try {
+      let result: any;
+      
+      switch (operation) {
+        case 'getAllDelegations': {
+          const staker = this.getNodeParameter('staker', i, '') as string;
+          const operator = this.getNodeParameter('operator', i, '') as string;
+          const limit = this.getNodeParameter('limit', i, 100) as number;
+          const offset = this.getNodeParameter('offset', i, 0) as number;
+
+          const queryParams: any = {};
+          if (staker) queryParams.staker = staker;
+          if (operator) queryParams.operator = operator;
+          if (limit) queryParams.limit = limit.toString();
+          if (offset) queryParams.offset = offset.toString();
+
+          const queryString = new URLSearchParams(queryParams).toString();
+          const url = `${credentials.baseUrl}/delegations${queryString ? '?' + queryString : ''}`;
+
+          const options: any = {
+            method: 'GET',
+            url,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getStakerDelegations': {
+          const staker = this.getNodeParameter('staker', i) as string;
+          
+          if (!staker) {
+            throw new NodeOperationError(this.getNode(), 'Staker address is required');
+          }
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/delegations/${staker}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getDelegatedOperator': {
+          const staker = this.getNodeParameter('staker', i) as string;
+          
+          if (!staker) {
+            throw new NodeOperationError(this.getNode(), 'Staker address is required');
+          }
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/delegations/${staker}/operator`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getDelegationRewards': {
+          const staker = this.getNodeParameter('staker', i, '') as string;
+          const operator = this.getNodeParameter('operator', i, '') as string;
+
+          const queryParams: any = {};
+          if (staker) queryParams.staker = staker;
+          if (operator) queryParams.operator = operator;
+
+          const queryString = new URLSearchParams(queryParams).toString();
+          const url = `${credentials.baseUrl}/delegations/rewards${queryString ? '?' + queryString : ''}`;
+
+          const options: any = {
+            method: 'GET',
+            url,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        default:
+          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
+      }
+
+      returnData.push({ 
+        json: result, 
+        pairedItem: { item: i } 
+      });
+
+    } catch (error: any) {
+      if (this.continueOnFail()) {
+        returnData.push({ 
+          json: { error: error.message }, 
+          pairedItem: { item: i } 
+        });
+      } else {
+        if (error.httpCode) {
+          throw new NodeApiError(this.getNode(), error);
+        }
+        throw new NodeOperationError(this.getNode(), error.message);
+      }
+    }
+  }
+
+  return returnData;
+}
+
+async function executeEigenPodsOperations(
+  this: IExecuteFunctions,
+  items: INodeExecutionData[],
+): Promise<INodeExecutionData[]> {
+  const returnData: INodeExecutionData[] = [];
+  const operation = this.getNodeParameter('operation', 0) as string;
+  const credentials = await this.getCredentials('eigenlayerApi') as any;
+
+  for (let i = 0; i < items.length; i++) {
+    try {
+      let result: any;
+
+      switch (operation) {
+        case 'getAllEigenPods': {
+          const owner = this.getNodeParameter('owner', i) as string;
+          const status = this.getNodeParameter('status', i) as string;
+          const limit = this.getNodeParameter('limit', i) as number;
+          const offset = this.getNodeParameter('offset', i) as number;
+
+          const params = new URLSearchParams();
+          if (owner) params.append('owner', owner);
+          if (status) params.append('status', status);
+          params.append('limit', limit.toString());
+          params.append('offset', offset.toString());
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/eigenpods?${params.toString()}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getEigenPod': {
+          const address = this.getNodeParameter('address', i) as string;
+
+          if (!address || !address.startsWith('0x')) {
+            throw new NodeOperationError(
+              this.getNode(),
+              'Invalid EigenPod address. Must be a valid Ethereum address starting with 0x',
+            );
+          }
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/eigenpods/${address}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getEigenPodValidators': {
+          const address = this.getNodeParameter('address', i) as string;
+          const validatorStatus = this.getNodeParameter('validatorStatus', i) as string;
+
+          if (!address || !address.startsWith('0x')) {
+            throw new NodeOperationError(
+              this.getNode(),
+              'Invalid EigenPod address. Must be a valid Ethereum address starting with 0x',
+            );
+          }
+
+          const params = new URLSearchParams();
+          if (validatorStatus) params.append('status', validatorStatus);
+
+          const queryString = params.toString() ? `?${params.toString()}` : '';
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/eigenpods/${address}/validators${queryString}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getEigenPodWithdrawals': {
+          const address = this.getNodeParameter('address', i) as string;
+
+          if (!address || !address.startsWith('0x')) {
+            throw new NodeOperationError(
+              this.getNode(),
+              'Invalid EigenPod address. Must be a valid Ethereum address starting with 0x',
+            );
+          }
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/eigenpods/${address}/withdrawals`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        default:
+          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
+      }
+
+      returnData.push({
+        json: result,
+        pairedItem: { item: i },
+      });
+
+    } catch (error: any) {
+      if (this.continueOnFail()) {
+        returnData.push({
+          json: { error: error.message },
+          pairedItem: { item: i },
+        });
+      } else {
+        if (error.httpCode) {
+          throw new NodeApiError(this.getNode(), error);
+        }
+        throw new NodeOperationError(this.getNode(), error.message);
+      }
+    }
+  }
+
+  return returnData;
+}
+
+async function executeAVSOperations(
+  this: IExecuteFunctions,
+  items: INodeExecutionData[],
+): Promise<INodeExecutionData[]> {
+  const returnData: INodeExecutionData[] = [];
+  const operation = this.getNodeParameter('operation', 0) as string;
+  const credentials = await this.getCredentials('eigenlayerApi') as any;
+
+  for (let i = 0; i < items.length; i++) {
+    try {
+      let result: any;
+
+      switch (operation) {
+        case 'getAllAVS': {
+          const limit = this.getNodeParameter('limit', i, 100) as number;
+          const offset = this.getNodeParameter('offset', i, 0) as number;
+          const status = this.getNodeParameter('status', i, '') as string;
+
+          const queryParams: any = {
+            limit: limit.toString(),
+            offset: offset.toString(),
+          };
+
+          if (status) {
+            queryParams.status = status;
+          }
+
+          const queryString = new URLSearchParams(queryParams).toString();
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/avs?${queryString}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getAVS': {
+          const address = this.getNodeParameter('address', i) as string;
+
+          if (!address) {
+            throw new NodeOperationError(this.getNode(), 'AVS address is required');
+          }
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/avs/${address}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getAVSOperators': {
+          const address = this.getNodeParameter('address', i) as string;
+          const limit = this.getNodeParameter('limit', i, 100) as number;
+          const offset = this.getNodeParameter('offset', i, 0) as number;
+
+          if (!address) {
+            throw new NodeOperationError(this.getNode(), 'AVS address is required');
+          }
+
+          const queryParams = new URLSearchParams({
+            limit: limit.toString(),
+            offset: offset.toString(),
+          });
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/avs/${address}/operators?${queryParams.toString()}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getAVSRewards': {
+          const address = this.getNodeParameter('address', i) as string;
+          const epoch = this.getNodeParameter('epoch', i, 0) as number;
+
+          if (!address) {
+            throw new NodeOperationError(this.getNode(), 'AVS address is required');
+          }
+
+          const queryParams: any = {};
+          if (epoch > 0) {
+            queryParams.epoch = epoch.toString();
+          }
+
+          const queryString = Object.keys(queryParams).length > 0 
+            ? `?${new URLSearchParams(queryParams).toString()}`
+            : '';
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/avs/${address}/rewards${queryString}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        default:
+          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
+      }
+
+      returnData.push({ 
+        json: result,
+        pairedItem: { item: i },
+      });
+
+    } catch (error: any) {
+      if (this.continueOnFail()) {
+        returnData.push({
+          json: { error: error.message },
+          pairedItem: { item: i },
+        });
+      } else {
+        if (error.httpCode) {
+          throw new NodeApiError(this.getNode(), error);
+        }
+        throw new NodeOperationError(this.getNode(), error.message);
+      }
+    }
+  }
+
+  return returnData;
+}
+
+async function executeRestakingOperations(
+  this: IExecuteFunctions,
+  items: INodeExecutionData[],
+): Promise<INodeExecutionData[]> {
+  const returnData: INodeExecutionData[] = [];
+  const operation = this.getNodeParameter('operation', 0) as string;
+  const credentials = await this.getCredentials('eigenlayerApi') as any;
+
+  for (let i = 0; i < items.length; i++) {
+    try {
+      let result: any;
+
+      switch (operation) {
+        case 'getStrategies': {
+          const limit = this.getNodeParameter('limit', i, 100) as number;
+          const offset = this.getNodeParameter('offset', i, 0) as number;
+
+          const queryParams = new URLSearchParams();
+          if (limit) queryParams.append('limit', limit.toString());
+          if (offset) queryParams.append('offset', offset.toString());
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/restaking/strategies${queryParams.toString() ? '?' + queryParams.toString() : ''}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getDeposits': {
+          const staker = this.getNodeParameter('staker', i, '') as string;
+          const strategy = this.getNodeParameter('strategy', i, '') as string;
+          const limit = this.getNodeParameter('limit', i, 100) as number;
+          const offset = this.getNodeParameter('offset', i, 0) as number;
+
+          const queryParams = new URLSearchParams();
+          if (staker) queryParams.append('staker', staker);
+          if (strategy) queryParams.append('strategy', strategy);
+          if (limit) queryParams.append('limit', limit.toString());
+          if (offset) queryParams.append('offset', offset.toString());
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/restaking/deposits${queryParams.toString() ? '?' + queryParams.toString() : ''}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getWithdrawals': {
+          const staker = this.getNodeParameter('staker', i, '') as string;
+          const strategy = this.getNodeParameter('strategy', i, '') as string;
+          const status = this.getNodeParameter('status', i, '') as string;
+
+          const queryParams = new URLSearchParams();
+          if (staker) queryParams.append('staker', staker);
+          if (strategy) queryParams.append('strategy', strategy);
+          if (status) queryParams.append('status', status);
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/restaking/withdrawals${queryParams.toString() ? '?' + queryParams.toString() : ''}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getStakerBalances': {
+          const staker = this.getNodeParameter('staker', i) as string;
+          const strategy = this.getNodeParameter('strategy', i, '') as string;
+
+          if (!staker) {
+            throw new NodeOperationError(this.getNode(), 'Staker address is required');
+          }
+
+          const queryParams = new URLSearchParams();
+          if (strategy) queryParams.append('strategy', strategy);
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/restaking/balances/${staker}${queryParams.toString() ? '?' + queryParams.toString() : ''}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        default:
+          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
+      }
+
+      returnData.push({
+        json: result,
+        pairedItem: { item: i },
+      });
+    } catch (error: any) {
+      if (this.continueOnFail()) {
+        returnData.push({
+          json: { error: error.message },
+          pairedItem: { item: i },
+        });
+      } else {
+        if (error.httpCode) {
+          throw new NodeApiError(this.getNode(), error);
+        }
+        throw new NodeOperationError(this.getNode(), error.message);
+      }
+    }
+  }
+
+  return returnData;
+}
+
+async function executeRewardsOperations(
+  this: IExecuteFunctions,
+  items: INodeExecutionData[],
+): Promise<INodeExecutionData[]> {
+  const returnData: INodeExecutionData[] = [];
+  const operation = this.getNodeParameter('operation', 0) as string;
+  const credentials = await this.getCredentials('eigenlayerApi') as any;
+
+  for (let i = 0; i < items.length; i++) {
+    try {
+      let result: any;
+      
+      switch (operation) {
+        case 'getAllRewards': {
+          const recipient = this.getNodeParameter('recipient', i) as string;
+          const avs = this.getNodeParameter('avs', i) as string;
+          const limit = this.getNodeParameter('limit', i) as number;
+          const offset = this.getNodeParameter('offset', i) as number;
+
+          const params = new URLSearchParams();
+          if (recipient) params.append('recipient', recipient);
+          if (avs) params.append('avs', avs);
+          if (limit) params.append('limit', limit.toString());
+          if (offset) params.append('offset', offset.toString());
+
+          const queryString = params.toString();
+          const url = `${credentials.baseUrl}/rewards${queryString ? '?' + queryString : ''}`;
+
+          const options: any = {
+            method: 'GET',
+            url,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getAddressRewards': {
+          const address = this.getNodeParameter('address', i) as string;
+          const epoch = this.getNodeParameter('epoch', i) as number;
+
+          const params = new URLSearchParams();
+          if (epoch) params.append('epoch', epoch.toString());
+
+          const queryString = params.toString();
+          const url = `${credentials.baseUrl}/rewards/${address}${queryString ? '?' + queryString : ''}`;
+
+          const options: any = {
+            method: 'GET',
+            url,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getRewardDistributions': {
+          const avs = this.getNodeParameter('avs', i) as string;
+          const epoch = this.getNodeParameter('epoch', i) as number;
+
+          const params = new URLSearchParams();
+          if (avs) params.append('avs', avs);
+          if (epoch) params.append('epoch', epoch.toString());
+
+          const queryString = params.toString();
+          const url = `${credentials.baseUrl}/rewards/distributions${queryString ? '?' + queryString : ''}`;
+
+          const options: any = {
+            method: 'GET',
+            url,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getRewardClaims': {
+          const recipient = this.getNodeParameter('recipient', i) as string;
+          const status = this.getNodeParameter('status', i) as string;
+
+          const params = new URLSearchParams();
+          if (recipient) params.append('recipient', recipient);
+          if (status) params.append('status', status);
+
+          const queryString = params.toString();
+          const url = `${credentials.baseUrl}/rewards/claims${queryString ? '?' + queryString : ''}`;
+
+          const options: any = {
+            method: 'GET',
+            url,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        default:
+          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
+      }
+
+      returnData.push({
+        json: result,
+        pairedItem: { item: i },
+      });
+
+    } catch (error: any) {
+      if (this.continueOnFail()) {
+        returnData.push({
+          json: { error: error.message },
+          pairedItem: { item: i },
+        });
+      } else {
+        throw new NodeApiError(this.getNode(), error);
+      }
+    }
+  }
+
+  return returnData;
 }

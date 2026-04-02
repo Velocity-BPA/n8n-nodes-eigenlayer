@@ -1,32 +1,32 @@
 {
-  "name": "n8n-nodes-eigenlayer",
+  "name": "@velocity-bpa/n8n-nodes-eigenlayer",
   "version": "1.0.0",
-  "description": "n8n community node for EigenLayer",
-  "license": "SEE LICENSE IN LICENSE.md",
-  "main": "dist/nodes/EigenLayer/EigenLayer.node.js",
-  "files": [
-    "dist/**/*"
-  ],
+  "description": "n8n community node for EigenLayer restaking protocol integration",
+  "license": "bsl-catalog",
+  "homepage": "https://github.com/velocity-bpa/n8n-nodes-eigenlayer",
+  "author": {
+    "name": "Velocity BPA",
+    "email": "support@velocitybpa.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/velocity-bpa/n8n-nodes-eigenlayer.git"
+  },
   "engines": {
     "node": ">=18.0.0"
   },
   "packageManager": "pnpm@9.1.4",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc && gulp build:icons",
     "dev": "tsc --watch",
+    "format": "prettier nodes credentials --write",
     "lint": "eslint nodes credentials package.json",
     "lintfix": "eslint nodes credentials package.json --fix",
-    "format": "prettier nodes credentials --write",
-    "test": "jest",
-    "test:coverage": "jest --coverage",
     "prepublishOnly": "npm run build"
   },
-  "keywords": [
-    "n8n-community-node-package",
-    "eigenlayer",
-    "ethereum",
-    "restaking",
-    "blockchain"
+  "files": [
+    "dist/**/*"
   ],
   "n8n": {
     "n8nNodesApiVersion": 1,
@@ -37,22 +37,20 @@
       "dist/nodes/EigenLayer/EigenLayer.node.js"
     ]
   },
-  "dependencies": {
-    "axios": "^1.6.2"
-  },
   "devDependencies": {
-    "@types/node": "^20.10.5",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.15.0",
+    "@typescript-eslint/eslint-plugin": "^7.15.0",
     "eslint": "^8.56.0",
-    "eslint-plugin-prettier": "^5.1.2",
+    "eslint-plugin-n8n-nodes-base": "^1.16.1",
     "gulp": "^4.0.2",
-    "jest": "^29.7.0",
     "n8n-workflow": "*",
-    "prettier": "^3.1.1",
-    "typescript": "^5.3.3"
+    "prettier": "^3.3.2",
+    "typescript": "^5.5.3"
   },
   "peerDependencies": {
     "n8n-workflow": "*"
+  },
+  "dependencies": {
+    "axios": "^1.7.2"
   }
 }

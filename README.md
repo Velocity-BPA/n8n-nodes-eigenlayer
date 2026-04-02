@@ -8,25 +8,25 @@
 >
 > For licensing information, visit https://velobpa.com/licensing or contact licensing@velobpa.com.
 
-This n8n community node provides comprehensive integration with EigenLayer's restaking protocol, enabling automation across 6 core resources including operators, delegations, EigenPods, AVS (Actively Validated Services), restaking operations, and rewards management for decentralized validation workflows.
+This n8n community node provides comprehensive integration with EigenLayer's restaking protocol, offering 6 core resources for managing decentralized validation infrastructure. Access restaking operations, delegation management, EigenPod controls, operator registration, AVS registration, and rewards tracking through automated workflows.
 
 ![n8n Community Node](https://img.shields.io/badge/n8n-Community%20Node-blue)
 ![License](https://img.shields.io/badge/license-BSL--1.1-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
 ![EigenLayer](https://img.shields.io/badge/EigenLayer-Protocol-purple)
-![Restaking](https://img.shields.io/badge/Restaking-Enabled-green)
-![AVS](https://img.shields.io/badge/AVS-Compatible-orange)
+![Ethereum](https://img.shields.io/badge/Ethereum-Restaking-blue)
+![DeFi](https://img.shields.io/badge/DeFi-Automation-green)
 
 ## Features
 
-- **Operator Management** - Register, update, and monitor EigenLayer operators with comprehensive metadata handling
-- **Delegation Control** - Automate stake delegation workflows and track delegator relationships
-- **EigenPod Operations** - Manage native ETH restaking through EigenPod deployments and validations
-- **AVS Integration** - Connect with Actively Validated Services for enhanced validation workflows
-- **Restaking Automation** - Streamline liquid and native restaking operations across multiple strategies
-- **Rewards Tracking** - Monitor and distribute rewards across operators and delegators
-- **Multi-Network Support** - Compatible with Ethereum mainnet and supported testnets
-- **Real-time Monitoring** - Track staking metrics, validator performance, and protocol events
+- **Complete Restaking Management** - Stake, unstake, and manage ETH restaking positions across multiple strategies
+- **Delegation Operations** - Automate delegation to operators and manage delegation relationships
+- **EigenPod Controls** - Monitor and manage EigenPod lifecycle, validator proofs, and withdrawals
+- **Operator Registration** - Register and update operator metadata, manage operator stakes and commissions
+- **AVS Integration** - Register with Actively Validated Services and manage service-specific configurations
+- **Rewards Tracking** - Monitor and claim rewards from restaking activities across all supported strategies
+- **Real-time Monitoring** - Track staking positions, delegation status, and reward accumulation
+- **Multi-Strategy Support** - Work with liquid staking tokens and native ETH restaking strategies
 
 ## Installation
 
@@ -61,117 +61,115 @@ n8n start
 
 | Field | Description | Required |
 |-------|-------------|----------|
-| API Key | Your EigenLayer API authentication key | Yes |
-| Network | Target network (mainnet, goerli, holesky) | Yes |
-| Private Key | Wallet private key for transaction signing | Yes |
-| RPC Endpoint | Custom RPC endpoint (optional) | No |
+| API Key | EigenLayer API key for authentication | Yes |
+| Environment | Target environment (mainnet/testnet) | Yes |
+| Wallet Address | Ethereum wallet address for operations | Yes |
 
 ## Resources & Operations
 
-### 1. Operators
+### 1. Restaking
 
 | Operation | Description |
 |-----------|-------------|
-| Register | Register a new operator on EigenLayer |
-| Update Metadata | Update operator metadata and configuration |
-| Get Details | Retrieve operator information and statistics |
-| List Operators | Get paginated list of operators with filters |
-| Update Commission | Modify operator commission rates |
-| Deregister | Remove operator from EigenLayer protocol |
+| Stake | Deposit ETH or LSTs into EigenLayer restaking strategies |
+| Unstake | Initiate unstaking process from restaking positions |
+| Get Position | Retrieve current restaking position details and balances |
+| List Strategies | Get available restaking strategies and their parameters |
+| Queue Withdrawal | Queue assets for withdrawal with delay period |
+| Complete Withdrawal | Complete queued withdrawals after delay period |
 
-### 2. Delegations
+### 2. Delegation
 
 | Operation | Description |
 |-----------|-------------|
-| Delegate | Delegate stake to a specific operator |
+| Delegate | Delegate restaked assets to a specific operator |
 | Undelegate | Remove delegation from an operator |
-| Get Delegations | Retrieve delegation details for an address |
-| List Delegators | Get all delegators for a specific operator |
-| Calculate Shares | Compute delegation shares for given amounts |
-| Get Withdrawal | Check withdrawal request status |
+| Get Delegation | Retrieve current delegation status and operator details |
+| List Operators | Get available operators with their metadata and performance |
+| Update Delegation | Modify existing delegation parameters |
+| Get Delegation History | Retrieve historical delegation changes |
 
 ### 3. EigenPods
 
 | Operation | Description |
 |-----------|-------------|
-| Deploy Pod | Deploy a new EigenPod for native ETH restaking |
-| Stake ETH | Stake ETH through an EigenPod |
-| Verify Withdrawal | Verify and process ETH withdrawals |
-| Get Pod Status | Retrieve EigenPod status and balance |
-| Update Proof | Submit validator proof updates |
-| Withdraw Restaked ETH | Process restaked ETH withdrawals |
+| Create Pod | Deploy a new EigenPod for native ETH restaking |
+| Verify Credentials | Submit validator credentials for EigenPod verification |
+| Prove Withdrawal | Submit withdrawal proofs for validator exits |
+| Get Pod Status | Retrieve EigenPod status and associated validators |
+| Update Pod | Update EigenPod configuration and settings |
+| Withdraw from Pod | Process withdrawals from EigenPod balance |
 
-### 4. AVS (Actively Validated Services)
-
-| Operation | Description |
-|-----------|-------------|
-| Register AVS | Register a new Actively Validated Service |
-| Opt In | Opt operator into specific AVS |
-| Opt Out | Remove operator from AVS participation |
-| Get AVS List | Retrieve available AVS with metadata |
-| Get Operator AVS | List AVS where operator is registered |
-| Update AVS Metadata | Modify AVS configuration and details |
-
-### 5. Restaking
+### 4. OperatorRegistration
 
 | Operation | Description |
 |-----------|-------------|
-| Deposit Tokens | Deposit tokens into restaking strategies |
-| Queue Withdrawal | Initiate withdrawal from restaking positions |
-| Complete Withdrawal | Finalize queued withdrawal requests |
-| Get Strategies | List available restaking strategies |
-| Get User Stakes | Retrieve user's restaking positions |
-| Calculate TVL | Compute total value locked in strategies |
+| Register Operator | Register as an operator on EigenLayer |
+| Update Metadata | Update operator metadata and configuration |
+| Set Commission | Configure operator commission rates |
+| Get Operator Info | Retrieve operator details and statistics |
+| Deregister | Remove operator registration |
+| Update Socket | Update operator communication endpoints |
+
+### 5. AVSRegistration
+
+| Operation | Description |
+|-----------|-------------|
+| Register with AVS | Register operator with Actively Validated Services |
+| Deregister from AVS | Remove registration from specific AVS |
+| Get AVS List | Retrieve available AVS and their requirements |
+| Update AVS Config | Modify AVS-specific configuration |
+| Get Registration Status | Check current AVS registration status |
+| Submit AVS Proof | Submit required proofs for AVS participation |
 
 ### 6. Rewards
 
 | Operation | Description |
 |-----------|-------------|
-| Get Operator Rewards | Retrieve rewards earned by operators |
-| Get Delegator Rewards | Fetch rewards for delegators |
-| Claim Rewards | Process reward claims for addresses |
-| Get Reward History | Historical rewards data with filters |
-| Calculate APY | Compute annualized percentage yield |
-| Get Distribution | Retrieve reward distribution schedules |
+| Get Rewards | Retrieve current reward balances across strategies |
+| Claim Rewards | Claim accumulated rewards from restaking activities |
+| Get Reward History | Retrieve historical reward distribution data |
+| Calculate Projected | Estimate future rewards based on current positions |
+| Get APY Data | Retrieve current and historical APY for strategies |
+| Track Performance | Monitor reward performance across time periods |
 
 ## Usage Examples
 
 ```javascript
-// Register a new EigenLayer operator
+// Stake ETH in a restaking strategy
 {
-  "operator_address": "0x742d35Cc6634C0532925a3b8D4BA8ff95CF9b",
-  "metadata_uri": "https://operator.example.com/metadata.json",
-  "delegation_approver": "0x0000000000000000000000000000000000000000",
-  "staker_opt_out_window_blocks": 50400
+  "operation": "stake",
+  "strategy": "stETH",
+  "amount": "32",
+  "recipient": "0x742d35Cc6634C0532925a3b8D62115CdEFE13891"
 }
 ```
 
 ```javascript
-// Delegate stake to an operator
+// Delegate restaked assets to an operator
 {
-  "operator": "0x742d35Cc6634C0532925a3b8D4BA8ff95CF9b",
-  "strategy": "0x0Fe4F44beE93503346A3Ac9EE5A26b130a5796d6",
-  "shares": "1000000000000000000",
-  "delegator": "0x8ba1f109551bD432803012645Hac136c22C177ec"
+  "operation": "delegate",
+  "operator": "0x1234567890abcdef1234567890abcdef12345678",
+  "amount": "100",
+  "strategy": "cbETH"
 }
 ```
 
 ```javascript
-// Deploy and configure EigenPod
+// Create and configure an EigenPod
 {
-  "owner": "0x8ba1f109551bD432803012645Hac136c22C177ec",
-  "withdrawal_credentials": "0x010000000000000000000000742d35Cc6634C0532925a3b8D4BA8ff95CF9b",
-  "deposit_amount": "32000000000000000000"
+  "operation": "createPod",
+  "withdrawalCredentials": "0x010000000000000000000000742d35Cc6634C0532925a3b8D62115CdEFE13891",
+  "podOwner": "0x742d35Cc6634C0532925a3b8D62115CdEFE13891"
 }
 ```
 
 ```javascript
-// Opt operator into AVS
+// Claim accumulated rewards
 {
-  "operator": "0x742d35Cc6634C0532925a3b8D4BA8ff95CF9b",
-  "avs_registry": "0x1B30A3b5744e733d8d2f19F0812E3F79152a8777",
-  "operator_signature": "0x1b4f0e8840ccb1058c21c2e6b4e57c7b...",
-  "salt": "0x1234567890abcdef"
+  "operation": "claimRewards",
+  "strategies": ["stETH", "rETH", "cbETH"],
+  "recipient": "0x742d35Cc6634C0532925a3b8D62115CdEFE13891"
 }
 ```
 
@@ -179,12 +177,12 @@ n8n start
 
 | Error | Description | Solution |
 |-------|-------------|----------|
-| Invalid API Key | Authentication failed with provided credentials | Verify API key is correct and active |
-| Insufficient Balance | Not enough tokens for restaking operation | Check wallet balance and gas fees |
-| Invalid Operator | Operator address not found or not registered | Verify operator address and registration status |
-| Slashing Risk | Operation blocked due to slashing conditions | Review slashing parameters and wait for clearance |
-| Network Congestion | Transaction failed due to high gas prices | Retry with higher gas limit or wait for lower fees |
-| Invalid Signature | Transaction signature verification failed | Check private key and signing parameters |
+| Invalid API Key | Authentication failed with provided credentials | Verify API key and environment settings |
+| Insufficient Balance | Not enough tokens for requested operation | Check wallet balance and allowances |
+| Invalid Strategy | Specified restaking strategy not found | Use List Strategies operation to get valid options |
+| Delegation Not Found | No active delegation found for operator | Verify operator address and delegation status |
+| Pod Not Deployed | EigenPod not found for specified address | Create EigenPod before performing pod operations |
+| Withdrawal Delay | Withdrawal still in queue period | Wait for delay period completion before claiming |
 
 ## Development
 

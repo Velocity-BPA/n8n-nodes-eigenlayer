@@ -67,1043 +67,734 @@ describe('EigenLayer Node', () => {
   });
 
   // Resource-specific tests
-describe('Operators Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://holesky-api.eigenlayer.xyz/v1',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  describe('getAllOperators', () => {
-    it('should get all operators successfully', async () => {
-      const mockResponse = {
-        data: [
-          { address: '0x123...', name: 'Operator 1', status: 'active' },
-          { address: '0x456...', name: 'Operator 2', status: 'active' }
-        ],
-        total: 2
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getAllOperators';
-          case 'limit': return 100;
-          case 'offset': return 0;
-          case 'status': return 'active';
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const items = [{ json: {} }];
-      const result = await executeOperatorsOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://holesky-api.eigenlayer.xyz/v1/operators?limit=100&offset=0&status=active',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-
-    it('should handle errors when getting all operators', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'getAllOperators';
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
-
-      const items = [{ json: {} }];
-
-      await expect(executeOperatorsOperations.call(mockExecuteFunctions, items))
-        .rejects.toThrow('API Error');
-    });
-  });
-
-  describe('getOperator', () => {
-    it('should get specific operator successfully', async () => {
-      const mockResponse = {
-        address: '0x123...',
-        name: 'Test Operator',
-        status: 'active',
-        metadata: {}
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getOperator';
-          case 'address': return '0x123...';
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const items = [{ json: {} }];
-      const result = await executeOperatorsOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://holesky-api.eigenlayer.xyz/v1/operators/0x123...',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-
-    it('should throw error when address is missing', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getOperator';
-          case 'address': return '';
-          default: return undefined;
-        }
-      });
-
-      const items = [{ json: {} }];
-
-      await expect(executeOperatorsOperations.call(mockExecuteFunctions, items))
-        .rejects.toThrow('Address is required');
-    });
-  });
-
-  describe('getOperatorDelegations', () => {
-    it('should get operator delegations successfully', async () => {
-      const mockResponse = {
-        data: [
-          { delegator: '0xabc...', amount: '1000000000000000000' },
-          { delegator: '0xdef...', amount: '2000000000000000000' }
-        ],
-        total: 2
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getOperatorDelegations';
-          case 'address': return '0x123...';
-          case 'limit': return 50;
-          case 'offset': return 10;
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const items = [{ json: {} }];
-      const result = await executeOperatorsOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://holesky-api.eigenlayer.xyz/v1/operators/0x123.../delegations?limit=50&offset=10',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('getOperatorAVS', () => {
-    it('should get operator AVS registrations successfully', async () => {
-      const mockResponse = {
-        data: [
-          { avsAddress: '0xavs1...', name: 'AVS 1', registeredAt: '2024-01-01T00:00:00Z' },
-          { avsAddress: '0xavs2...', name: 'AVS 2', registeredAt: '2024-01-02T00:00:00Z' }
-        ],
-        total: 2
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation': return 'getOperatorAVS';
-          case 'address': return '0x123...';
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const items = [{ json: {} }];
-      const result = await executeOperatorsOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://holesky-api.eigenlayer.xyz/v1/operators/0x123.../avs',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
-});
-
-describe('Delegations Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://holesky-api.eigenlayer.xyz/v1',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  describe('getAllDelegations', () => {
-    it('should retrieve all delegations successfully', async () => {
-      const mockResponse = {
-        delegations: [
-          {
-            staker: '0x123',
-            operator: '0x456',
-            timestamp: '2024-01-01T00:00:00Z'
-          }
-        ]
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getAllDelegations';
-          case 'staker': return '0x123';
-          case 'operator': return '0x456';
-          case 'limit': return 100;
-          case 'offset': return 0;
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeDelegationsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://holesky-api.eigenlayer.xyz/v1/delegations?staker=0x123&operator=0x456&limit=100&offset=0',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('getStakerDelegations', () => {
-    it('should get delegations for a specific staker', async () => {
-      const mockResponse = {
-        staker: '0x123',
-        delegations: [
-          {
-            operator: '0x456',
-            amount: '1000000000000000000'
-          }
-        ]
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getStakerDelegations';
-          case 'staker': return '0x123';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeDelegationsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://holesky-api.eigenlayer.xyz/v1/delegations/0x123',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-
-    it('should throw error when staker address is missing', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getStakerDelegations';
-          case 'staker': return '';
-          default: return '';
-        }
-      });
-
-      await expect(
-        executeDelegationsOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow('Staker address is required');
-    });
-  });
-
-  describe('getDelegatedOperator', () => {
-    it('should get delegated operator for a staker', async () => {
-      const mockResponse = {
-        staker: '0x123',
-        operator: '0x456',
-        delegatedAt: '2024-01-01T00:00:00Z'
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getDelegatedOperator';
-          case 'staker': return '0x123';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeDelegationsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://holesky-api.eigenlayer.xyz/v1/delegations/0x123/operator',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('getDelegationRewards', () => {
-    it('should get delegation rewards', async () => {
-      const mockResponse = {
-        rewards: [
-          {
-            staker: '0x123',
-            operator: '0x456',
-            amount: '500000000000000000',
-            token: '0x789'
-          }
-        ]
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getDelegationRewards';
-          case 'staker': return '0x123';
-          case 'operator': return '0x456';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeDelegationsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://holesky-api.eigenlayer.xyz/v1/delegations/rewards?staker=0x123&operator=0x456',
-        headers: {
-          'Authorization': 'Bearer test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('error handling', () => {
-    it('should handle API errors', async () => {
-      const mockError = {
-        message: 'API Error',
-        httpCode: 400
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getAllDelegations';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(mockError);
-
-      await expect(
-        executeDelegationsOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow();
-    });
-
-    it('should continue on fail when configured', async () => {
-      const mockError = new Error('Test error');
-      
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getAllDelegations';
-          default: return '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(mockError);
-
-      const result = await executeDelegationsOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json.error).toBe('Test error');
-    });
-  });
-});
-
-describe('EigenPods Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://holesky-api.eigenlayer.xyz/v1',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  describe('getAllEigenPods', () => {
-    it('should retrieve all EigenPods successfully', async () => {
-      const mockResponse = {
-        eigenPods: [
-          {
-            address: '0x1234567890123456789012345678901234567890',
-            owner: '0x0987654321098765432109876543210987654321',
-            status: 'active',
-            totalStaked: '32000000000000000000',
-          },
-        ],
-        total: 1,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getAllEigenPods';
-          case 'owner': return '';
-          case 'status': return '';
-          case 'limit': return 100;
-          case 'offset': return 0;
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeEigenPodsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-    });
-
-    it('should handle errors when retrieving EigenPods', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getAllEigenPods';
-          case 'owner': return '';
-          case 'status': return '';
-          case 'limit': return 100;
-          case 'offset': return 0;
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
-
-      await expect(
-        executeEigenPodsOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow('API Error');
-    });
-  });
-
-  describe('getEigenPod', () => {
-    it('should retrieve specific EigenPod details successfully', async () => {
-      const mockResponse = {
-        address: '0x1234567890123456789012345678901234567890',
-        owner: '0x0987654321098765432109876543210987654321',
-        status: 'active',
-        totalStaked: '32000000000000000000',
-        validators: 1,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getEigenPod';
-          case 'address': return '0x1234567890123456789012345678901234567890';
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeEigenPodsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-    });
-
-    it('should handle invalid address format', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getEigenPod';
-          case 'address': return 'invalid-address';
-          default: return undefined;
-        }
-      });
-
-      await expect(
-        executeEigenPodsOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow('Invalid EigenPod address');
-    });
-  });
-
-  describe('getEigenPodValidators', () => {
-    it('should retrieve EigenPod validators successfully', async () => {
-      const mockResponse = {
-        validators: [
-          {
-            publicKey: '0xabcd...',
-            status: 'active',
-            balance: '32000000000000000000',
-            effectiveBalance: '32000000000000000000',
-          },
-        ],
-        total: 1,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getEigenPodValidators';
-          case 'address': return '0x1234567890123456789012345678901234567890';
-          case 'validatorStatus': return 'active';
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeEigenPodsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
-
-  describe('getEigenPodWithdrawals', () => {
-    it('should retrieve EigenPod withdrawals successfully', async () => {
-      const mockResponse = {
-        withdrawals: [
-          {
-            amount: '1000000000000000000',
-            timestamp: '2024-01-01T00:00:00Z',
-            transactionHash: '0xabcd1234...',
-            status: 'completed',
-          },
-        ],
-        total: 1,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getEigenPodWithdrawals';
-          case 'address': return '0x1234567890123456789012345678901234567890';
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeEigenPodsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
-});
-
-describe('AVS Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://holesky-api.eigenlayer.xyz/v1',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  test('getAllAVS should retrieve list of all AVS', async () => {
-    const mockResponse = {
-      data: [
-        { address: '0x123...', name: 'Test AVS 1', status: 'active' },
-        { address: '0x456...', name: 'Test AVS 2', status: 'active' }
-      ],
-      total: 2,
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-      switch (paramName) {
-        case 'operation': return 'getAllAVS';
-        case 'limit': return 100;
-        case 'offset': return 0;
-        case 'status': return 'active';
-        default: return undefined;
-      }
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeAVSOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-      method: 'GET',
-      url: 'https://holesky-api.eigenlayer.xyz/v1/avs?limit=100&offset=0&status=active',
-      headers: {
-        'Authorization': 'Bearer test-api-key',
-        'Content-Type': 'application/json',
-      },
-      json: true,
-    });
-  });
-
-  test('getAVS should retrieve specific AVS details', async () => {
-    const mockResponse = {
-      address: '0x123...',
-      name: 'Test AVS',
-      description: 'Test AVS Description',
-      status: 'active',
-      metadata: {},
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-      switch (paramName) {
-        case 'operation': return 'getAVS';
-        case 'address': return '0x123...';
-        default: return undefined;
-      }
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeAVSOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-      method: 'GET',
-      url: 'https://holesky-api.eigenlayer.xyz/v1/avs/0x123...',
-      headers: {
-        'Authorization': 'Bearer test-api-key',
-        'Content-Type': 'application/json',
-      },
-      json: true,
-    });
-  });
-
-  test('getAVSOperators should retrieve operators for specific AVS', async () => {
-    const mockResponse = {
-      data: [
-        { address: '0xoperator1...', stake: '1000000', status: 'active' },
-        { address: '0xoperator2...', stake: '2000000', status: 'active' }
-      ],
-      total: 2,
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-      switch (paramName) {
-        case 'operation': return 'getAVSOperators';
-        case 'address': return '0x123...';
-        case 'limit': return 100;
-        case 'offset': return 0;
-        default: return undefined;
-      }
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeAVSOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-      method: 'GET',
-      url: 'https://holesky-api.eigenlayer.xyz/v1/avs/0x123.../operators?limit=100&offset=0',
-      headers: {
-        'Authorization': 'Bearer test-api-key',
-        'Content-Type': 'application/json',
-      },
-      json: true,
-    });
-  });
-
-  test('getAVSRewards should retrieve reward information for specific AVS', async () => {
-    const mockResponse = {
-      epoch: 123,
-      totalRewards: '5000000',
-      distributedRewards: '4500000',
-      pendingRewards: '500000',
-      rewards: [],
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-      switch (paramName) {
-        case 'operation': return 'getAVSRewards';
-        case 'address': return '0x123...';
-        case 'epoch': return 123;
-        default: return undefined;
-      }
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeAVSOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-      method: 'GET',
-      url: 'https://holesky-api.eigenlayer.xyz/v1/avs/0x123.../rewards?epoch=123',
-      headers: {
-        'Authorization': 'Bearer test-api-key',
-        'Content-Type': 'application/json',
-      },
-      json: true,
-    });
-  });
-
-  test('should handle API errors gracefully', async () => {
-    mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-      switch (paramName) {
-        case 'operation': return 'getAVS';
-        case 'address': return '0x123...';
-        default: return undefined;
-      }
-    });
-
-    const mockError = new Error('API Error');
-    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(mockError);
-
-    await expect(
-      executeAVSOperations.call(mockExecuteFunctions, [{ json: {} }])
-    ).rejects.toThrow('API Error');
-  });
-
-  test('should handle missing required address parameter', async () => {
-    mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-      switch (paramName) {
-        case 'operation': return 'getAVS';
-        case 'address': return '';
-        default: return undefined;
-      }
-    });
-
-    await expect(
-      executeAVSOperations.call(mockExecuteFunctions, [{ json: {} }])
-    ).rejects.toThrow('AVS address is required');
-  });
-});
-
 describe('Restaking Resource', () => {
   let mockExecuteFunctions: any;
 
   beforeEach(() => {
     mockExecuteFunctions = {
       getNodeParameter: jest.fn(),
+      getCredentials: jest.fn().mockResolvedValue({ 
+        apiKey: 'test-key', 
+        baseUrl: 'https://api.eigenlayer.xyz/v1' 
+      }),
+      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+      continueOnFail: jest.fn().mockReturnValue(false),
+      helpers: { 
+        httpRequest: jest.fn(),
+        requestWithAuthentication: jest.fn() 
+      },
+    };
+  });
+
+  it('should stake tokens successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('stakeTokens')
+      .mockReturnValueOnce('0x1234567890123456789012345678901234567890')
+      .mockReturnValueOnce('1000000000000000000')
+      .mockReturnValueOnce('0xabcdefabcdefabcdefabcdefabcdefabcdefabcd');
+
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      success: true,
+      transactionHash: '0xhash123',
+      positionId: 'pos-123'
+    });
+
+    const result = await executeRestakingOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }]
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].json.success).toBe(true);
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+      method: 'POST',
+      url: 'https://api.eigenlayer.xyz/v1/restaking/stake',
+      headers: {
+        'Authorization': 'Bearer test-key',
+        'Content-Type': 'application/json',
+      },
+      body: {
+        token: '0x1234567890123456789012345678901234567890',
+        amount: '1000000000000000000',
+        operator: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      },
+      json: true,
+    });
+  });
+
+  it('should get positions for address successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getPositions')
+      .mockReturnValueOnce('0x1234567890123456789012345678901234567890')
+      .mockReturnValueOnce('');
+
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      positions: [{ id: 'pos-1', amount: '1000000000000000000' }]
+    });
+
+    const result = await executeRestakingOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }]
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].json.positions).toHaveLength(1);
+  });
+
+  it('should handle API errors gracefully', async () => {
+    mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('stakeTokens');
+    mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+
+    const result = await executeRestakingOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }]
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].json.error).toBe('API Error');
+  });
+
+  it('should get all positions with pagination', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getAllPositions')
+      .mockReturnValueOnce(1)
+      .mockReturnValueOnce(20)
+      .mockReturnValueOnce('');
+
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      positions: [],
+      pagination: { page: 1, limit: 20, total: 0 }
+    });
+
+    const result = await executeRestakingOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }]
+    );
+
+    expect(result).toHaveLength(1);
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+      method: 'GET',
+      url: 'https://api.eigenlayer.xyz/v1/restaking/positions?page=1&limit=20',
+      headers: {
+        'Authorization': 'Bearer test-key',
+      },
+      json: true,
+    });
+  });
+
+  it('should update position successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('updatePosition')
+      .mockReturnValueOnce('pos-123')
+      .mockReturnValueOnce('0xnewoperator')
+      .mockReturnValueOnce('2000000000000000000');
+
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      success: true,
+      position: { id: 'pos-123', updated: true }
+    });
+
+    const result = await executeRestakingOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }]
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].json.success).toBe(true);
+  });
+
+  it('should unstake tokens successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('unstakeTokens')
+      .mockReturnValueOnce('0x1234567890123456789012345678901234567890')
+      .mockReturnValueOnce('500000000000000000')
+      .mockReturnValueOnce('pos-123');
+
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      success: true,
+      unstakeId: 'unstake-123',
+      withdrawalDelay: 7
+    });
+
+    const result = await executeRestakingOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }]
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].json.success).toBe(true);
+    expect(result[0].json.unstakeId).toBe('unstake-123');
+  });
+});
+
+describe('Delegation Resource', () => {
+  let mockExecuteFunctions: any;
+
+  beforeEach(() => {
+    mockExecuteFunctions = {
+      getNodeParameter: jest.fn(),
+      getCredentials: jest.fn().mockResolvedValue({ 
+        apiKey: 'test-key', 
+        baseUrl: 'https://api.eigenlayer.xyz/v1' 
+      }),
+      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+      continueOnFail: jest.fn().mockReturnValue(false),
+      helpers: { 
+        httpRequest: jest.fn(),
+        requestWithAuthentication: jest.fn() 
+      },
+    };
+  });
+
+  it('should delegate to operator successfully', async () => {
+    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+      switch (param) {
+        case 'operation': return 'delegateToOperator';
+        case 'operator': return '0x1234567890123456789012345678901234567890';
+        case 'amount': return '1000000000000000000';
+        case 'token': return '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd';
+        default: return undefined;
+      }
+    });
+
+    const mockResponse = { success: true, delegationId: 'del_123' };
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+    const result = await executeDelegationOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+    expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+      method: 'POST',
+      url: 'https://api.eigenlayer.xyz/v1/delegation/delegate',
+      headers: {
+        'Authorization': 'Bearer test-key',
+        'Content-Type': 'application/json',
+      },
+      body: {
+        operator: '0x1234567890123456789012345678901234567890',
+        amount: '1000000000000000000',
+        token: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      },
+      json: true,
+    });
+  });
+
+  it('should get delegations for address successfully', async () => {
+    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+      switch (param) {
+        case 'operation': return 'getDelegations';
+        case 'address': return '0x1234567890123456789012345678901234567890';
+        case 'operator': return '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd';
+        default: return undefined;
+      }
+    });
+
+    const mockResponse = { delegations: [{ id: 'del_123', amount: '1000000000000000000' }] };
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+    const result = await executeDelegationOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+    expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+      method: 'GET',
+      url: 'https://api.eigenlayer.xyz/v1/delegation/delegations/0x1234567890123456789012345678901234567890?operator=0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      headers: {
+        'Authorization': 'Bearer test-key',
+      },
+      json: true,
+    });
+  });
+
+  it('should handle delegation error gracefully', async () => {
+    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+      switch (param) {
+        case 'operation': return 'delegateToOperator';
+        case 'operator': return 'invalid-address';
+        default: return undefined;
+      }
+    });
+
+    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Invalid operator address'));
+    mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+
+    const result = await executeDelegationOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+    expect(result).toEqual([{ json: { error: 'Invalid operator address' }, pairedItem: { item: 0 } }]);
+  });
+
+  it('should update delegation successfully', async () => {
+    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+      switch (param) {
+        case 'operation': return 'updateDelegation';
+        case 'delegationId': return 'del_123';
+        case 'amount': return '2000000000000000000';
+        case 'operator': return '0xnewoperator123456789012345678901234567890';
+        default: return undefined;
+      }
+    });
+
+    const mockResponse = { success: true, updatedDelegation: { id: 'del_123' } };
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+    const result = await executeDelegationOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+    expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+  });
+
+  it('should undelegate from operator successfully', async () => {
+    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+      switch (param) {
+        case 'operation': return 'undelegateFromOperator';
+        case 'delegationId': return 'del_123';
+        case 'amount': return '1000000000000000000';
+        default: return undefined;
+      }
+    });
+
+    const mockResponse = { success: true, transactionHash: '0xtx123' };
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+    const result = await executeDelegationOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+    expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+      method: 'DELETE',
+      url: 'https://api.eigenlayer.xyz/v1/delegation/undelegate',
+      headers: {
+        'Authorization': 'Bearer test-key',
+        'Content-Type': 'application/json',
+      },
+      body: {
+        delegationId: 'del_123',
+        amount: '1000000000000000000',
+      },
+      json: true,
+    });
+  });
+});
+
+describe('EigenPods Resource', () => {
+	let mockExecuteFunctions: any;
+
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({
+				apiKey: 'test-key',
+				baseUrl: 'https://api.eigenlayer.xyz/v1',
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: {
+				httpRequest: jest.fn(),
+				requestWithAuthentication: jest.fn(),
+			},
+		};
+	});
+
+	describe('createEigenPod', () => {
+		it('should create EigenPod successfully', async () => {
+			const mockResponse = { podAddress: '0x123...', txHash: '0xabc...' };
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('createEigenPod')
+				.mockReturnValueOnce('0x742d35Cc6634C0532925a3b8D44542a95D824e8E')
+				.mockReturnValueOnce('0x010000000000000000000000742d35Cc6634C0532925a3b8D44542a95D824e8E');
+
+			const items = [{ json: {} }];
+			const result = await executeEigenPodsOperations.call(mockExecuteFunctions, items);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'POST',
+				url: 'https://api.eigenlayer.xyz/v1/eigenpods/create',
+				headers: {
+					'Authorization': 'Bearer test-key',
+					'Content-Type': 'application/json',
+				},
+				body: {
+					owner: '0x742d35Cc6634C0532925a3b8D44542a95D824e8E',
+					withdrawalCredentials: '0x010000000000000000000000742d35Cc6634C0532925a3b8D44542a95D824e8E',
+				},
+				json: true,
+			});
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+
+		it('should handle createEigenPod error', async () => {
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('createEigenPod');
+
+			const items = [{ json: {} }];
+			const result = await executeEigenPodsOperations.call(mockExecuteFunctions, items);
+
+			expect(result).toEqual([{ json: { error: 'API Error' }, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('getEigenPod', () => {
+		it('should get EigenPod successfully', async () => {
+			const mockResponse = { address: '0x123...', owner: '0x456...', status: 'active' };
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getEigenPod')
+				.mockReturnValueOnce('0x123...')
+				.mockReturnValueOnce(true);
+
+			const items = [{ json: {} }];
+			const result = await executeEigenPodsOperations.call(mockExecuteFunctions, items);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://api.eigenlayer.xyz/v1/eigenpods/0x123...?includeValidators=true',
+				headers: {
+					'Authorization': 'Bearer test-key',
+				},
+				json: true,
+			});
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('getAllEigenPods', () => {
+		it('should get all EigenPods successfully', async () => {
+			const mockResponse = { pods: [], total: 0, page: 1 };
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getAllEigenPods')
+				.mockReturnValueOnce(1)
+				.mockReturnValueOnce(20)
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce('');
+
+			const items = [{ json: {} }];
+			const result = await executeEigenPodsOperations.call(mockExecuteFunctions, items);
+
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('verifyValidators', () => {
+		it('should verify validators successfully', async () => {
+			const mockResponse = { verified: true, indices: [1, 2] };
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('verifyValidators')
+				.mockReturnValueOnce('0x123...')
+				.mockReturnValueOnce('1,2')
+				.mockReturnValueOnce('{"proof1": "data1"}');
+
+			const items = [{ json: {} }];
+			const result = await executeEigenPodsOperations.call(mockExecuteFunctions, items);
+
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+
+	describe('withdrawFromEigenPod', () => {
+		it('should withdraw from EigenPod successfully', async () => {
+			const mockResponse = { txHash: '0xdef...', amount: '1000000000000000000' };
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('withdrawFromEigenPod')
+				.mockReturnValueOnce('0x123...')
+				.mockReturnValueOnce('1000000000000000000')
+				.mockReturnValueOnce('0x456...');
+
+			const items = [{ json: {} }];
+			const result = await executeEigenPodsOperations.call(mockExecuteFunctions, items);
+
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
+	});
+});
+
+describe('OperatorRegistration Resource', () => {
+  let mockExecuteFunctions: any;
+
+  beforeEach(() => {
+    mockExecuteFunctions = {
+      getNodeParameter: jest.fn(),
       getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://holesky-api.eigenlayer.xyz/v1',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.eigenlayer.xyz/v1'
       }),
       getInputData: jest.fn().mockReturnValue([{ json: {} }]),
       getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
       continueOnFail: jest.fn().mockReturnValue(false),
       helpers: {
         httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
+        requestWithAuthentication: jest.fn()
       },
     };
   });
 
-  describe('getStrategies operation', () => {
-    it('should get strategies successfully', async () => {
-      const mockResponse = {
-        strategies: [
-          {
-            address: '0x123...',
-            name: 'Strategy 1',
-            totalValueLocked: '1000000',
-          },
-        ],
-        total: 1,
-      };
+  describe('registerOperator', () => {
+    it('should register operator successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('registerOperator')
+        .mockReturnValueOnce('0x742d35Cc6634C0532925a3b8D40')
+        .mockReturnValueOnce('https://metadata.example.com/operator.json')
+        .mockReturnValueOnce('0x123456789abcdef');
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation':
-            return 'getStrategies';
-          case 'limit':
-            return 100;
-          case 'offset':
-            return 0;
-          default:
-            return undefined;
-        }
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+        success: true,
+        operatorId: 'op-123',
+        transactionHash: '0xabc123'
       });
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+      const items = [{ json: {} }];
+      const result = await executeOperatorRegistrationOperations.call(mockExecuteFunctions, items);
 
-      const result = await executeRestakingOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([
-        {
-          json: mockResponse,
-          pairedItem: { item: 0 },
-        },
-      ]);
+      expect(result).toHaveLength(1);
+      expect(result[0].json.success).toBe(true);
       expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://holesky-api.eigenlayer.xyz/v1/restaking/strategies?limit=100&offset=0',
+        method: 'POST',
+        url: 'https://api.eigenlayer.xyz/v1/operators/register',
         headers: {
-          'Authorization': 'Bearer test-api-key',
+          'Authorization': 'Bearer test-key',
           'Content-Type': 'application/json',
+        },
+        body: {
+          operatorAddress: '0x742d35Cc6634C0532925a3b8D40',
+          metadataURI: 'https://metadata.example.com/operator.json',
+          delegationApprover: '0x123456789abcdef'
         },
         json: true,
       });
     });
 
-    it('should handle getStrategies error', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'getStrategies';
-        return undefined;
-      });
+    it('should handle registerOperator error', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('registerOperator')
+        .mockReturnValueOnce('0x742d35Cc6634C0532925a3b8D40')
+        .mockReturnValueOnce('https://metadata.example.com/operator.json')
+        .mockReturnValueOnce('');
 
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Registration failed'));
+      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
 
-      await expect(
-        executeRestakingOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow('API Error');
+      const items = [{ json: {} }];
+      const result = await executeOperatorRegistrationOperations.call(mockExecuteFunctions, items);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].json.error).toBe('Registration failed');
     });
   });
 
-  describe('getDeposits operation', () => {
-    it('should get deposits successfully', async () => {
-      const mockResponse = {
-        deposits: [
-          {
-            staker: '0x123...',
-            strategy: '0x456...',
-            amount: '1000000',
-            blockNumber: 12345,
-          },
-        ],
-        total: 1,
-      };
+  describe('getOperator', () => {
+    it('should get operator successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('getOperator')
+        .mockReturnValueOnce('0x742d35Cc6634C0532925a3b8D40')
+        .mockReturnValueOnce(true);
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation':
-            return 'getDeposits';
-          case 'staker':
-            return '0x123...';
-          case 'strategy':
-            return '0x456...';
-          case 'limit':
-            return 100;
-          case 'offset':
-            return 0;
-          default:
-            return undefined;
-        }
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+        operatorAddress: '0x742d35Cc6634C0532925a3b8D40',
+        metadataURI: 'https://metadata.example.com/operator.json',
+        totalStake: '1000000000000000000'
       });
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+      const items = [{ json: {} }];
+      const result = await executeOperatorRegistrationOperations.call(mockExecuteFunctions, items);
 
-      const result = await executeRestakingOperations.call(mockExecuteFunctions, [{ json: {} }]);
+      expect(result).toHaveLength(1);
+      expect(result[0].json.operatorAddress).toBe('0x742d35Cc6634C0532925a3b8D40');
+    });
 
-      expect(result).toEqual([
-        {
-          json: mockResponse,
-          pairedItem: { item: 0 },
-        },
-      ]);
+    it('should handle getOperator error', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('getOperator')
+        .mockReturnValueOnce('0x742d35Cc6634C0532925a3b8D40')
+        .mockReturnValueOnce(false);
+
+      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Operator not found'));
+      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+
+      const items = [{ json: {} }];
+      const result = await executeOperatorRegistrationOperations.call(mockExecuteFunctions, items);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].json.error).toBe('Operator not found');
     });
   });
 
-  describe('getWithdrawals operation', () => {
-    it('should get withdrawals successfully', async () => {
-      const mockResponse = {
-        withdrawals: [
-          {
-            staker: '0x123...',
-            strategy: '0x456...',
-            amount: '500000',
-            status: 'completed',
-          },
-        ],
-        total: 1,
-      };
+  describe('getAllOperators', () => {
+    it('should get all operators successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('getAllOperators')
+        .mockReturnValueOnce(1)
+        .mockReturnValueOnce(20)
+        .mockReturnValueOnce('active')
+        .mockReturnValueOnce('1000000000000000000');
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation':
-            return 'getWithdrawals';
-          case 'staker':
-            return '0x123...';
-          case 'strategy':
-            return '0x456...';
-          case 'status':
-            return 'completed';
-          default:
-            return undefined;
-        }
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+        operators: [
+          { operatorAddress: '0x742d35Cc6634C0532925a3b8D40', status: 'active' }
+        ],
+        totalCount: 1,
+        page: 1,
+        limit: 20
       });
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+      const items = [{ json: {} }];
+      const result = await executeOperatorRegistrationOperations.call(mockExecuteFunctions, items);
 
-      const result = await executeRestakingOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([
-        {
-          json: mockResponse,
-          pairedItem: { item: 0 },
-        },
-      ]);
+      expect(result).toHaveLength(1);
+      expect(result[0].json.operators).toHaveLength(1);
     });
   });
 
-  describe('getStakerBalances operation', () => {
-    it('should get staker balances successfully', async () => {
-      const mockResponse = {
-        staker: '0x123...',
-        balances: [
-          {
-            strategy: '0x456...',
-            balance: '1500000',
-            shares: '1500000',
-          },
-        ],
-      };
+  describe('updateOperator', () => {
+    it('should update operator successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('updateOperator')
+        .mockReturnValueOnce('0x742d35Cc6634C0532925a3b8D40')
+        .mockReturnValueOnce('https://updated-metadata.example.com/operator.json')
+        .mockReturnValueOnce('0x987654321fedcba');
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation':
-            return 'getStakerBalances';
-          case 'staker':
-            return '0x123...';
-          case 'strategy':
-            return '0x456...';
-          default:
-            return undefined;
-        }
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+        success: true,
+        transactionHash: '0xdef456'
       });
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+      const items = [{ json: {} }];
+      const result = await executeOperatorRegistrationOperations.call(mockExecuteFunctions, items);
 
-      const result = await executeRestakingOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([
-        {
-          json: mockResponse,
-          pairedItem: { item: 0 },
-        },
-      ]);
+      expect(result).toHaveLength(1);
+      expect(result[0].json.success).toBe(true);
     });
+  });
 
-    it('should handle missing staker address error', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation':
-            return 'getStakerBalances';
-          case 'staker':
-            return '';
-          default:
-            return undefined;
-        }
+  describe('deregisterOperator', () => {
+    it('should deregister operator successfully', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('deregisterOperator')
+        .mockReturnValueOnce('0x742d35Cc6634C0532925a3b8D40');
+
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+        success: true,
+        transactionHash: '0x789abc'
       });
 
-      await expect(
-        executeRestakingOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow('Staker address is required');
+      const items = [{ json: {} }];
+      const result = await executeOperatorRegistrationOperations.call(mockExecuteFunctions, items);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].json.success).toBe(true);
     });
+  });
+});
+
+describe('AVSRegistration Resource', () => {
+  let mockExecuteFunctions: any;
+
+  beforeEach(() => {
+    mockExecuteFunctions = {
+      getNodeParameter: jest.fn(),
+      getCredentials: jest.fn().mockResolvedValue({ 
+        apiKey: 'test-key', 
+        baseUrl: 'https://api.eigenlayer.xyz/v1' 
+      }),
+      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+      continueOnFail: jest.fn().mockReturnValue(false),
+      helpers: { 
+        httpRequest: jest.fn(),
+        requestWithAuthentication: jest.fn() 
+      },
+    };
+  });
+
+  it('should register AVS successfully', async () => {
+    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+      switch (param) {
+        case 'operation': return 'registerAVS';
+        case 'avsAddress': return '0x123...abc';
+        case 'metadataURI': return 'https://example.com/metadata';
+        case 'rewardToken': return '0x456...def';
+        default: return null;
+      }
+    });
+
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      success: true,
+      avsAddress: '0x123...abc',
+    });
+
+    const result = await executeAVSRegistrationOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }],
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].json.success).toBe(true);
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+      method: 'POST',
+      url: 'https://api.eigenlayer.xyz/v1/avs/register',
+      headers: {
+        'Authorization': 'Bearer test-key',
+        'Content-Type': 'application/json',
+      },
+      json: true,
+      body: {
+        avsAddress: '0x123...abc',
+        metadataURI: 'https://example.com/metadata',
+        rewardToken: '0x456...def',
+      },
+    });
+  });
+
+  it('should get AVS details successfully', async () => {
+    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+      switch (param) {
+        case 'operation': return 'getAVS';
+        case 'avsAddress': return '0x123...abc';
+        case 'includeOperators': return true;
+        default: return null;
+      }
+    });
+
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      avsAddress: '0x123...abc',
+      operators: [],
+    });
+
+    const result = await executeAVSRegistrationOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }],
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].json.avsAddress).toBe('0x123...abc');
+  });
+
+  it('should handle errors gracefully', async () => {
+    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+      switch (param) {
+        case 'operation': return 'registerAVS';
+        case 'avsAddress': return 'invalid-address';
+        default: return null;
+      }
+    });
+
+    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(
+      new Error('Invalid address format'),
+    );
+
+    mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+
+    const result = await executeAVSRegistrationOperations.call(
+      mockExecuteFunctions,
+      [{ json: {} }],
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].json.error).toBe('Invalid address format');
   });
 });
 
@@ -1114,166 +805,167 @@ describe('Rewards Resource', () => {
     mockExecuteFunctions = {
       getNodeParameter: jest.fn(),
       getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://holesky-api.eigenlayer.xyz/v1',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.eigenlayer.xyz/v1',
       }),
       getInputData: jest.fn().mockReturnValue([{ json: {} }]),
       getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
       continueOnFail: jest.fn().mockReturnValue(false),
       helpers: {
         httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
       },
     };
   });
 
-  test('getAllRewards should fetch all rewards successfully', async () => {
-    const mockResponse = {
+  it('should calculate rewards successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('calculateRewards')
+      .mockReturnValueOnce('0x1234567890123456789012345678901234567890')
+      .mockReturnValueOnce('0xToken123')
+      .mockReturnValueOnce('30d');
+
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      address: '0x1234567890123456789012345678901234567890',
+      pendingRewards: '1000000000000000000',
+      claimableRewards: '500000000000000000',
+    });
+
+    const result = await executeRewardsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].json.address).toBe('0x1234567890123456789012345678901234567890');
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        url: 'https://api.eigenlayer.xyz/v1/rewards/calculate/0x1234567890123456789012345678901234567890?token=0xToken123&period=30d',
+      })
+    );
+  });
+
+  it('should get reward history successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getRewardHistory')
+      .mockReturnValueOnce('0x1234567890123456789012345678901234567890')
+      .mockReturnValueOnce('2023-01-01')
+      .mockReturnValueOnce('2023-12-31')
+      .mockReturnValueOnce('0xToken123');
+
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
       rewards: [
-        { recipient: '0x123', amount: '1000', epoch: 1 },
-        { recipient: '0x456', amount: '2000', epoch: 2 },
+        { date: '2023-06-01', amount: '100000000000000000', token: '0xToken123' },
       ],
-      total: 2,
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'getAllRewards';
-        case 'recipient': return '0x123';
-        case 'avs': return '';
-        case 'limit': return 100;
-        case 'offset': return 0;
-        default: return null;
-      }
     });
 
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const items = [{ json: {} }];
-    const result = await executeRewardsOperations.call(mockExecuteFunctions, items);
+    const result = await executeRewardsOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
     expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-      method: 'GET',
-      url: 'https://holesky-api.eigenlayer.xyz/v1/rewards?recipient=0x123&limit=100&offset=0',
-      headers: {
-        'Authorization': 'Bearer test-api-key',
-        'Content-Type': 'application/json',
-      },
-      json: true,
-    });
+    expect(result[0].json.rewards).toBeDefined();
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        url: 'https://api.eigenlayer.xyz/v1/rewards/history/0x1234567890123456789012345678901234567890?startDate=2023-01-01&endDate=2023-12-31&token=0xToken123',
+      })
+    );
   });
 
-  test('getAddressRewards should fetch rewards for specific address', async () => {
-    const mockResponse = {
-      address: '0x123',
-      rewards: [{ amount: '1000', epoch: 1 }],
-    };
+  it('should get all distributions successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getAllDistributions')
+      .mockReturnValueOnce(1)
+      .mockReturnValueOnce(50)
+      .mockReturnValueOnce('0xAVS123')
+      .mockReturnValueOnce('0xToken123');
 
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'getAddressRewards';
-        case 'address': return '0x123';
-        case 'epoch': return 1;
-        default: return null;
-      }
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const items = [{ json: {} }];
-    const result = await executeRewardsOperations.call(mockExecuteFunctions, items);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-      method: 'GET',
-      url: 'https://holesky-api.eigenlayer.xyz/v1/rewards/0x123?epoch=1',
-      headers: {
-        'Authorization': 'Bearer test-api-key',
-        'Content-Type': 'application/json',
-      },
-      json: true,
-    });
-  });
-
-  test('getRewardDistributions should fetch distribution events', async () => {
-    const mockResponse = {
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
       distributions: [
-        { avs: '0x789', amount: '5000', epoch: 1 },
+        { id: 1, avs: '0xAVS123', token: '0xToken123', amount: '1000000000000000000' },
       ],
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'getRewardDistributions';
-        case 'avs': return '0x789';
-        case 'epoch': return 1;
-        default: return null;
-      }
+      pagination: { page: 1, limit: 50, total: 1 },
     });
 
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const items = [{ json: {} }];
-    const result = await executeRewardsOperations.call(mockExecuteFunctions, items);
+    const result = await executeRewardsOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
     expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
+    expect(result[0].json.distributions).toBeDefined();
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        url: 'https://api.eigenlayer.xyz/v1/rewards/distributions?page=1&limit=50&avs=0xAVS123&token=0xToken123',
+      })
+    );
   });
 
-  test('getRewardClaims should fetch claim history', async () => {
-    const mockResponse = {
-      claims: [
-        { recipient: '0x123', status: 'completed', amount: '1000' },
-      ],
-    };
+  it('should claim rewards successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('claimRewards')
+      .mockReturnValueOnce('0x1234567890123456789012345678901234567890')
+      .mockReturnValueOnce('0xToken1,0xToken2')
+      .mockReturnValueOnce({ '0xToken1': ['0xProof1'], '0xToken2': ['0xProof2'] });
 
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'getRewardClaims';
-        case 'recipient': return '0x123';
-        case 'status': return 'completed';
-        default: return null;
-      }
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      transactionHash: '0xTransactionHash123',
+      status: 'success',
     });
 
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const items = [{ json: {} }];
-    const result = await executeRewardsOperations.call(mockExecuteFunctions, items);
+    const result = await executeRewardsOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
     expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
+    expect(result[0].json.transactionHash).toBe('0xTransactionHash123');
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        url: 'https://api.eigenlayer.xyz/v1/rewards/claim',
+        body: expect.objectContaining({
+          address: '0x1234567890123456789012345678901234567890',
+          tokens: ['0xToken1', '0xToken2'],
+          merkleProofs: { '0xToken1': ['0xProof1'], '0xToken2': ['0xProof2'] },
+        }),
+      })
+    );
   });
 
-  test('should handle API errors correctly', async () => {
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      if (param === 'operation') return 'getAllRewards';
-      return null;
+  it('should get merkle proof successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getMerkleProof')
+      .mockReturnValueOnce('0xMerkleRoot123')
+      .mockReturnValueOnce('0x1234567890123456789012345678901234567890')
+      .mockReturnValueOnce('1000000000000000000');
+
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+      proof: ['0xProof1', '0xProof2', '0xProof3'],
+      leaf: '0xLeafHash',
     });
 
-    const apiError = new Error('API request failed');
-    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(apiError);
+    const result = await executeRewardsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].json.proof).toBeDefined();
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        url: 'https://api.eigenlayer.xyz/v1/rewards/merkle-tree/0xMerkleRoot123?address=0x1234567890123456789012345678901234567890&amount=1000000000000000000',
+      })
+    );
+  });
+
+  it('should handle errors gracefully when continueOnFail is true', async () => {
+    mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('calculateRewards');
     mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
 
-    const items = [{ json: {} }];
-    const result = await executeRewardsOperations.call(mockExecuteFunctions, items);
+    const result = await executeRewardsOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
     expect(result).toHaveLength(1);
-    expect(result[0].json.error).toBe('API request failed');
+    expect(result[0].json.error).toBe('API Error');
   });
 
-  test('should throw error for unknown operation', async () => {
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      if (param === 'operation') return 'unknownOperation';
-      return null;
-    });
+  it('should throw error when continueOnFail is false', async () => {
+    mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('calculateRewards');
+    mockExecuteFunctions.continueOnFail.mockReturnValue(false);
+    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
 
-    const items = [{ json: {} }];
-
-    await expect(executeRewardsOperations.call(mockExecuteFunctions, items)).rejects.toThrow();
+    await expect(executeRewardsOperations.call(mockExecuteFunctions, [{ json: {} }]))
+      .rejects.toThrow('API Error');
   });
 });
 });

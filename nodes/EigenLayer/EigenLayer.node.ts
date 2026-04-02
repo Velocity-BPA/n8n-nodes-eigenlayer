@@ -41,7 +41,6 @@ export class EigenLayer implements INodeType {
       },
     ],
     properties: [
-      // Resource selector
       {
         displayName: 'Resource',
         name: 'resource',
@@ -49,1130 +48,952 @@ export class EigenLayer implements INodeType {
         noDataExpression: true,
         options: [
           {
-            name: 'Operators',
-            value: 'operators',
+            name: 'Restaking',
+            value: 'restaking',
           },
           {
-            name: 'Delegations',
-            value: 'delegations',
+            name: 'Delegation',
+            value: 'delegation',
           },
           {
             name: 'EigenPods',
             value: 'eigenPods',
           },
           {
-            name: 'AVS',
-            value: 'aVS',
+            name: 'OperatorRegistration',
+            value: 'operatorRegistration',
           },
           {
-            name: 'Restaking',
-            value: 'restaking',
+            name: 'AVSRegistration',
+            value: 'aVSRegistration',
           },
           {
             name: 'Rewards',
             value: 'rewards',
           }
         ],
-        default: 'operators',
+        default: 'restaking',
       },
-      // Operation dropdowns per resource
 {
   displayName: 'Operation',
   name: 'operation',
   type: 'options',
   noDataExpression: true,
-  displayOptions: {
-    show: {
-      resource: ['operators'],
-    },
-  },
+  displayOptions: { show: { resource: ['restaking'] } },
   options: [
-    {
-      name: 'Get All Operators',
-      value: 'getAllOperators',
-      description: 'Retrieve list of all operators',
-      action: 'Get all operators',
-    },
-    {
-      name: 'Get Operator',
-      value: 'getOperator',
-      description: 'Get specific operator details',
-      action: 'Get operator details',
-    },
-    {
-      name: 'Get Operator Delegations',
-      value: 'getOperatorDelegations',
-      description: 'Get delegations for an operator',
-      action: 'Get operator delegations',
-    },
-    {
-      name: 'Get Operator AVS',
-      value: 'getOperatorAVS',
-      description: 'Get AVS registrations for an operator',
-      action: 'Get operator AVS registrations',
-    },
+    { name: 'Stake Tokens', value: 'stakeTokens', description: 'Stake ETH or LSTs into EigenLayer', action: 'Stake tokens' },
+    { name: 'Get Positions', value: 'getPositions', description: 'Get restaking positions for an address', action: 'Get positions for address' },
+    { name: 'Get All Positions', value: 'getAllPositions', description: 'List all restaking positions with pagination', action: 'Get all positions' },
+    { name: 'Update Position', value: 'updatePosition', description: 'Update restaking position parameters', action: 'Update position' },
+    { name: 'Unstake Tokens', value: 'unstakeTokens', description: 'Initiate unstaking process', action: 'Unstake tokens' },
   ],
-  default: 'getAllOperators',
+  default: 'stakeTokens',
 },
 {
   displayName: 'Operation',
   name: 'operation',
   type: 'options',
   noDataExpression: true,
-  displayOptions: {
-    show: {
-      resource: ['delegations'],
-    },
-  },
+  displayOptions: { show: { resource: ['delegation'] } },
   options: [
-    {
-      name: 'Get All Delegations',
-      value: 'getAllDelegations',
-      description: 'Retrieve all delegations',
-      action: 'Get all delegations',
-    },
-    {
-      name: 'Get Staker Delegations',
-      value: 'getStakerDelegations',
-      description: 'Get delegations for a specific staker',
-      action: 'Get staker delegations',
-    },
-    {
-      name: 'Get Delegated Operator',
-      value: 'getDelegatedOperator',
-      description: 'Get operator that staker has delegated to',
-      action: 'Get delegated operator',
-    },
-    {
-      name: 'Get Delegation Rewards',
-      value: 'getDelegationRewards',
-      description: 'Get delegation reward information',
-      action: 'Get delegation rewards',
-    },
+    { name: 'Delegate to Operator', value: 'delegateToOperator', description: 'Delegate restaked tokens to an operator', action: 'Delegate tokens to operator' },
+    { name: 'Get Delegations', value: 'getDelegations', description: 'Get delegation details for an address', action: 'Get delegations for address' },
+    { name: 'Get All Delegations', value: 'getAllDelegations', description: 'List all delegations with filtering', action: 'List all delegations' },
+    { name: 'Update Delegation', value: 'updateDelegation', description: 'Modify existing delegation', action: 'Update delegation' },
+    { name: 'Undelegate from Operator', value: 'undelegateFromOperator', description: 'Remove delegation from operator', action: 'Undelegate from operator' },
   ],
-  default: 'getAllDelegations',
+  default: 'delegateToOperator',
+},
+{
+	displayName: 'Operation',
+	name: 'operation',
+	type: 'options',
+	noDataExpression: true,
+	displayOptions: { show: { resource: ['eigenPods'] } },
+	options: [
+		{
+			name: 'Create EigenPod',
+			value: 'createEigenPod',
+			description: 'Deploy new EigenPod for native ETH staking',
+			action: 'Create EigenPod',
+		},
+		{
+			name: 'Get EigenPod',
+			value: 'getEigenPod',
+			description: 'Get EigenPod details and status',
+			action: 'Get EigenPod',
+		},
+		{
+			name: 'Get All EigenPods',
+			value: 'getAllEigenPods',
+			description: 'List EigenPods with filtering options',
+			action: 'Get all EigenPods',
+		},
+		{
+			name: 'Verify Validators',
+			value: 'verifyValidators',
+			description: 'Verify validator credentials for EigenPod',
+			action: 'Verify validators',
+		},
+		{
+			name: 'Withdraw From EigenPod',
+			value: 'withdrawFromEigenPod',
+			description: 'Withdraw ETH from EigenPod',
+			action: 'Withdraw from EigenPod',
+		},
+	],
+	default: 'createEigenPod',
 },
 {
   displayName: 'Operation',
   name: 'operation',
   type: 'options',
   noDataExpression: true,
-  displayOptions: {
-    show: {
-      resource: ['eigenPods'],
-    },
-  },
+  displayOptions: { show: { resource: ['operatorRegistration'] } },
   options: [
-    {
-      name: 'Get All EigenPods',
-      value: 'getAllEigenPods',
-      description: 'Retrieve list of EigenPods',
-      action: 'Get all EigenPods',
-    },
-    {
-      name: 'Get EigenPod',
-      value: 'getEigenPod',
-      description: 'Get specific EigenPod details',
-      action: 'Get EigenPod details',
-    },
-    {
-      name: 'Get EigenPod Validators',
-      value: 'getEigenPodValidators',
-      description: 'Get validators for an EigenPod',
-      action: 'Get EigenPod validators',
-    },
-    {
-      name: 'Get EigenPod Withdrawals',
-      value: 'getEigenPodWithdrawals',
-      description: 'Get withdrawal history for EigenPod',
-      action: 'Get EigenPod withdrawals',
-    },
+    { name: 'Register Operator', value: 'registerOperator', description: 'Register as an EigenLayer operator', action: 'Register operator' },
+    { name: 'Get Operator', value: 'getOperator', description: 'Get operator details and metadata', action: 'Get operator' },
+    { name: 'Get All Operators', value: 'getAllOperators', description: 'List registered operators with filtering', action: 'Get all operators' },
+    { name: 'Update Operator', value: 'updateOperator', description: 'Update operator metadata and settings', action: 'Update operator' },
+    { name: 'Deregister Operator', value: 'deregisterOperator', description: 'Deregister operator from EigenLayer', action: 'Deregister operator' },
   ],
-  default: 'getAllEigenPods',
+  default: 'registerOperator',
 },
 {
   displayName: 'Operation',
   name: 'operation',
   type: 'options',
   noDataExpression: true,
-  displayOptions: {
-    show: {
-      resource: ['aVS'],
-    },
-  },
+  displayOptions: { show: { resource: ['aVSRegistration'] } },
   options: [
-    {
-      name: 'Get All AVS',
-      value: 'getAllAVS',
-      description: 'Retrieve list of all Actively Validated Services',
-      action: 'Get all AVS',
-    },
-    {
-      name: 'Get AVS',
-      value: 'getAVS',
-      description: 'Get specific AVS details by address',
-      action: 'Get AVS details',
-    },
-    {
-      name: 'Get AVS Operators',
-      value: 'getAVSOperators',
-      description: 'Get operators registered to an AVS',
-      action: 'Get AVS operators',
-    },
-    {
-      name: 'Get AVS Rewards',
-      value: 'getAVSRewards',
-      description: 'Get reward information for an AVS',
-      action: 'Get AVS rewards',
-    },
+    { name: 'Register AVS', value: 'registerAVS', description: 'Register new Actively Validated Service', action: 'Register AVS' },
+    { name: 'Get AVS', value: 'getAVS', description: 'Get AVS details and registered operators', action: 'Get AVS details' },
+    { name: 'Get All AVS', value: 'getAllAVS', description: 'List all registered AVS with pagination', action: 'List all AVS' },
+    { name: 'Opt In To AVS', value: 'optInToAVS', description: 'Operator opts into AVS', action: 'Opt in to AVS' },
+    { name: 'Opt Out Of AVS', value: 'optOutOfAVS', description: 'Operator opts out of AVS', action: 'Opt out of AVS' },
   ],
-  default: 'getAllAVS',
+  default: 'registerAVS',
 },
 {
   displayName: 'Operation',
   name: 'operation',
   type: 'options',
   noDataExpression: true,
-  displayOptions: {
-    show: {
-      resource: ['restaking'],
-    },
-  },
+  displayOptions: { show: { resource: ['rewards'] } },
   options: [
-    {
-      name: 'Get Strategies',
-      value: 'getStrategies',
-      description: 'Get available restaking strategies',
-      action: 'Get available restaking strategies',
-    },
-    {
-      name: 'Get Deposits',
-      value: 'getDeposits',
-      description: 'Get deposit history',
-      action: 'Get deposit history',
-    },
-    {
-      name: 'Get Withdrawals',
-      value: 'getWithdrawals',
-      description: 'Get withdrawal history',
-      action: 'Get withdrawal history',
-    },
-    {
-      name: 'Get Staker Balances',
-      value: 'getStakerBalances',
-      description: 'Get staking balances for a staker',
-      action: 'Get staker balances',
-    },
+    { name: 'Calculate Rewards', value: 'calculateRewards', description: 'Calculate pending rewards for address', action: 'Calculate rewards' },
+    { name: 'Get Reward History', value: 'getRewardHistory', description: 'Get historical reward data', action: 'Get reward history' },
+    { name: 'Get All Distributions', value: 'getAllDistributions', description: 'List reward distributions across all AVS', action: 'Get all distributions' },
+    { name: 'Claim Rewards', value: 'claimRewards', description: 'Claim pending rewards', action: 'Claim rewards' },
+    { name: 'Get Merkle Proof', value: 'getMerkleProof', description: 'Get merkle proof for reward claim', action: 'Get merkle proof' },
   ],
-  default: 'getStrategies',
+  default: 'calculateRewards',
 },
 {
-  displayName: 'Operation',
-  name: 'operation',
-  type: 'options',
-  noDataExpression: true,
-  displayOptions: {
-    show: {
-      resource: ['rewards'],
-    },
-  },
-  options: [
-    {
-      name: 'Get All Rewards',
-      value: 'getAllRewards',
-      description: 'Get rewards across the protocol',
-      action: 'Get all rewards',
-    },
-    {
-      name: 'Get Address Rewards',
-      value: 'getAddressRewards',
-      description: 'Get rewards for specific address',
-      action: 'Get address rewards',
-    },
-    {
-      name: 'Get Reward Distributions',
-      value: 'getRewardDistributions',
-      description: 'Get reward distribution events',
-      action: 'Get reward distributions',
-    },
-    {
-      name: 'Get Reward Claims',
-      value: 'getRewardClaims',
-      description: 'Get reward claim history',
-      action: 'Get reward claims',
-    },
-  ],
-  default: 'getAllRewards',
+  displayName: 'Token',
+  name: 'token',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['restaking'], operation: ['stakeTokens'] } },
+  default: '',
+  description: 'Token address to stake (ETH or LST contract address)',
 },
-      // Parameter definitions
+{
+  displayName: 'Amount',
+  name: 'amount',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['restaking'], operation: ['stakeTokens'] } },
+  default: '',
+  description: 'Amount to stake in Wei',
+},
+{
+  displayName: 'Operator',
+  name: 'operator',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['restaking'], operation: ['stakeTokens'] } },
+  default: '',
+  description: 'Operator address to delegate to',
+},
+{
+  displayName: 'Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['restaking'], operation: ['getPositions'] } },
+  default: '',
+  description: 'Ethereum address to get positions for',
+},
+{
+  displayName: 'Token',
+  name: 'token',
+  type: 'string',
+  displayOptions: { show: { resource: ['restaking'], operation: ['getPositions'] } },
+  default: '',
+  description: 'Filter by specific token address',
+},
+{
+  displayName: 'Page',
+  name: 'page',
+  type: 'number',
+  displayOptions: { show: { resource: ['restaking'], operation: ['getAllPositions'] } },
+  default: 1,
+  description: 'Page number for pagination',
+},
+{
+  displayName: 'Limit',
+  name: 'limit',
+  type: 'number',
+  displayOptions: { show: { resource: ['restaking'], operation: ['getAllPositions'] } },
+  default: 20,
+  description: 'Number of items per page',
+},
+{
+  displayName: 'Token Filter',
+  name: 'token',
+  type: 'string',
+  displayOptions: { show: { resource: ['restaking'], operation: ['getAllPositions'] } },
+  default: '',
+  description: 'Filter positions by token address',
+},
+{
+  displayName: 'Position ID',
+  name: 'positionId',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['restaking'], operation: ['updatePosition'] } },
+  default: '',
+  description: 'ID of the position to update',
+},
+{
+  displayName: 'Operator',
+  name: 'operator',
+  type: 'string',
+  displayOptions: { show: { resource: ['restaking'], operation: ['updatePosition'] } },
+  default: '',
+  description: 'New operator address to delegate to',
+},
+{
+  displayName: 'Amount',
+  name: 'amount',
+  type: 'string',
+  displayOptions: { show: { resource: ['restaking'], operation: ['updatePosition'] } },
+  default: '',
+  description: 'New staking amount in Wei',
+},
+{
+  displayName: 'Token',
+  name: 'token',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['restaking'], operation: ['unstakeTokens'] } },
+  default: '',
+  description: 'Token address to unstake',
+},
+{
+  displayName: 'Amount',
+  name: 'amount',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['restaking'], operation: ['unstakeTokens'] } },
+  default: '',
+  description: 'Amount to unstake in Wei',
+},
+{
+  displayName: 'Position ID',
+  name: 'positionId',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['restaking'], operation: ['unstakeTokens'] } },
+  default: '',
+  description: 'ID of the position to unstake from',
+},
+{
+  displayName: 'Operator',
+  name: 'operator',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['delegation'], operation: ['delegateToOperator'] } },
+  default: '',
+  description: 'Ethereum address of the operator to delegate to',
+  placeholder: '0x1234567890123456789012345678901234567890',
+},
+{
+  displayName: 'Amount',
+  name: 'amount',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['delegation'], operation: ['delegateToOperator'] } },
+  default: '',
+  description: 'Amount of tokens to delegate (in Wei)',
+  placeholder: '1000000000000000000',
+},
+{
+  displayName: 'Token',
+  name: 'token',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['delegation'], operation: ['delegateToOperator'] } },
+  default: '',
+  description: 'Token contract address',
+  placeholder: '0x1234567890123456789012345678901234567890',
+},
+{
+  displayName: 'Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['delegation'], operation: ['getDelegations'] } },
+  default: '',
+  description: 'Ethereum address to get delegations for',
+  placeholder: '0x1234567890123456789012345678901234567890',
+},
+{
+  displayName: 'Operator',
+  name: 'operator',
+  type: 'string',
+  required: false,
+  displayOptions: { show: { resource: ['delegation'], operation: ['getDelegations', 'getAllDelegations'] } },
+  default: '',
+  description: 'Filter by operator address',
+  placeholder: '0x1234567890123456789012345678901234567890',
+},
+{
+  displayName: 'Page',
+  name: 'page',
+  type: 'number',
+  required: false,
+  displayOptions: { show: { resource: ['delegation'], operation: ['getAllDelegations'] } },
+  default: 1,
+  description: 'Page number for pagination',
+},
 {
   displayName: 'Limit',
   name: 'limit',
   type: 'number',
   required: false,
-  displayOptions: {
-    show: {
-      resource: ['operators'],
-      operation: ['getAllOperators'],
-    },
-  },
-  default: 100,
-  description: 'Maximum number of operators to return',
-},
-{
-  displayName: 'Offset',
-  name: 'offset',
-  type: 'number',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['operators'],
-      operation: ['getAllOperators'],
-    },
-  },
-  default: 0,
-  description: 'Number of operators to skip',
+  displayOptions: { show: { resource: ['delegation'], operation: ['getAllDelegations'] } },
+  default: 50,
+  description: 'Number of items per page',
 },
 {
   displayName: 'Status',
   name: 'status',
   type: 'options',
   required: false,
+  displayOptions: { show: { resource: ['delegation'], operation: ['getAllDelegations'] } },
+  options: [
+    { name: 'Active', value: 'active' },
+    { name: 'Pending', value: 'pending' },
+    { name: 'Completed', value: 'completed' },
+    { name: 'Failed', value: 'failed' },
+  ],
+  default: '',
+  description: 'Filter by delegation status',
+},
+{
+  displayName: 'Delegation ID',
+  name: 'delegationId',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['delegation'], operation: ['updateDelegation', 'undelegateFromOperator'] } },
+  default: '',
+  description: 'ID of the delegation to modify',
+},
+{
+  displayName: 'Amount',
+  name: 'amount',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['delegation'], operation: ['updateDelegation', 'undelegateFromOperator'] } },
+  default: '',
+  description: 'New amount for the delegation (in Wei)',
+  placeholder: '1000000000000000000',
+},
+{
+  displayName: 'Operator',
+  name: 'operator',
+  type: 'string',
+  required: false,
+  displayOptions: { show: { resource: ['delegation'], operation: ['updateDelegation'] } },
+  default: '',
+  description: 'New operator address for the delegation',
+  placeholder: '0x1234567890123456789012345678901234567890',
+},
+{
+	displayName: 'Owner Address',
+	name: 'owner',
+	type: 'string',
+	required: true,
+	displayOptions: {
+		show: {
+			resource: ['eigenPods'],
+			operation: ['createEigenPod'],
+		},
+	},
+	default: '',
+	description: 'Ethereum address of the EigenPod owner',
+	placeholder: '0x...',
+},
+{
+	displayName: 'Withdrawal Credentials',
+	name: 'withdrawalCredentials',
+	type: 'string',
+	required: true,
+	displayOptions: {
+		show: {
+			resource: ['eigenPods'],
+			operation: ['createEigenPod'],
+		},
+	},
+	default: '',
+	description: 'Withdrawal credentials for the EigenPod',
+	placeholder: '0x...',
+},
+{
+	displayName: 'Pod Address',
+	name: 'podAddress',
+	type: 'string',
+	required: true,
+	displayOptions: {
+		show: {
+			resource: ['eigenPods'],
+			operation: ['getEigenPod', 'verifyValidators', 'withdrawFromEigenPod'],
+		},
+	},
+	default: '',
+	description: 'Address of the EigenPod',
+	placeholder: '0x...',
+},
+{
+	displayName: 'Include Validators',
+	name: 'includeValidators',
+	type: 'boolean',
+	displayOptions: {
+		show: {
+			resource: ['eigenPods'],
+			operation: ['getEigenPod'],
+		},
+	},
+	default: false,
+	description: 'Whether to include validator details in the response',
+},
+{
+	displayName: 'Page',
+	name: 'page',
+	type: 'number',
+	displayOptions: {
+		show: {
+			resource: ['eigenPods'],
+			operation: ['getAllEigenPods'],
+		},
+	},
+	default: 1,
+	description: 'Page number for pagination',
+},
+{
+	displayName: 'Limit',
+	name: 'limit',
+	type: 'number',
+	displayOptions: {
+		show: {
+			resource: ['eigenPods'],
+			operation: ['getAllEigenPods'],
+		},
+	},
+	default: 20,
+	description: 'Number of EigenPods per page',
+},
+{
+	displayName: 'Owner Filter',
+	name: 'ownerFilter',
+	type: 'string',
+	displayOptions: {
+		show: {
+			resource: ['eigenPods'],
+			operation: ['getAllEigenPods'],
+		},
+	},
+	default: '',
+	description: 'Filter by owner address',
+	placeholder: '0x...',
+},
+{
+	displayName: 'Status Filter',
+	name: 'statusFilter',
+	type: 'options',
+	displayOptions: {
+		show: {
+			resource: ['eigenPods'],
+			operation: ['getAllEigenPods'],
+		},
+	},
+	options: [
+		{
+			name: 'All',
+			value: '',
+		},
+		{
+			name: 'Active',
+			value: 'active',
+		},
+		{
+			name: 'Inactive',
+			value: 'inactive',
+		},
+		{
+			name: 'Pending',
+			value: 'pending',
+		},
+	],
+	default: '',
+	description: 'Filter by EigenPod status',
+},
+{
+	displayName: 'Validator Indices',
+	name: 'validatorIndices',
+	type: 'string',
+	required: true,
+	displayOptions: {
+		show: {
+			resource: ['eigenPods'],
+			operation: ['verifyValidators'],
+		},
+	},
+	default: '',
+	description: 'Comma-separated list of validator indices to verify',
+	placeholder: '1,2,3',
+},
+{
+	displayName: 'Proofs',
+	name: 'proofs',
+	type: 'json',
+	required: true,
+	displayOptions: {
+		show: {
+			resource: ['eigenPods'],
+			operation: ['verifyValidators'],
+		},
+	},
+	default: '',
+	description: 'Merkle proofs for validator verification',
+},
+{
+	displayName: 'Amount',
+	name: 'amount',
+	type: 'string',
+	required: true,
+	displayOptions: {
+		show: {
+			resource: ['eigenPods'],
+			operation: ['withdrawFromEigenPod'],
+		},
+	},
+	default: '',
+	description: 'Amount to withdraw in Wei',
+	placeholder: '1000000000000000000',
+},
+{
+	displayName: 'Recipient',
+	name: 'recipient',
+	type: 'string',
+	required: true,
+	displayOptions: {
+		show: {
+			resource: ['eigenPods'],
+			operation: ['withdrawFromEigenPod'],
+		},
+	},
+	default: '',
+	description: 'Recipient address for the withdrawal',
+	placeholder: '0x...',
+},
+{
+  displayName: 'Operator Address',
+  name: 'operatorAddress',
+  type: 'string',
+  required: true,
   displayOptions: {
     show: {
-      resource: ['operators'],
+      resource: ['operatorRegistration'],
+      operation: ['registerOperator', 'getOperator', 'updateOperator', 'deregisterOperator'],
+    },
+  },
+  default: '',
+  placeholder: '0x742d35Cc6634C0532925a3b8D40',
+  description: 'Ethereum address of the operator',
+},
+{
+  displayName: 'Metadata URI',
+  name: 'metadataURI',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['operatorRegistration'],
+      operation: ['registerOperator'],
+    },
+  },
+  default: '',
+  placeholder: 'https://metadata.example.com/operator.json',
+  description: 'URI pointing to operator metadata JSON',
+},
+{
+  displayName: 'Delegation Approver',
+  name: 'delegationApprover',
+  type: 'string',
+  displayOptions: {
+    show: {
+      resource: ['operatorRegistration'],
+      operation: ['registerOperator'],
+    },
+  },
+  default: '',
+  placeholder: '0x742d35Cc6634C0532925a3b8D40',
+  description: 'Address that can approve delegations (optional)',
+},
+{
+  displayName: 'Include AVS',
+  name: 'includeAVS',
+  type: 'boolean',
+  displayOptions: {
+    show: {
+      resource: ['operatorRegistration'],
+      operation: ['getOperator'],
+    },
+  },
+  default: false,
+  description: 'Whether to include AVS participation details',
+},
+{
+  displayName: 'Page',
+  name: 'page',
+  type: 'number',
+  displayOptions: {
+    show: {
+      resource: ['operatorRegistration'],
       operation: ['getAllOperators'],
     },
   },
+  default: 1,
+  description: 'Page number for pagination',
+},
+{
+  displayName: 'Limit',
+  name: 'limit',
+  type: 'number',
+  displayOptions: {
+    show: {
+      resource: ['operatorRegistration'],
+      operation: ['getAllOperators'],
+    },
+  },
+  default: 20,
+  description: 'Number of operators to return per page',
+},
+{
+  displayName: 'Status',
+  name: 'status',
+  type: 'options',
   options: [
-    {
-      name: 'Active',
-      value: 'active',
-    },
-    {
-      name: 'Inactive',
-      value: 'inactive',
-    },
+    { name: 'All', value: '' },
+    { name: 'Active', value: 'active' },
+    { name: 'Inactive', value: 'inactive' },
+    { name: 'Slashed', value: 'slashed' },
   ],
+  displayOptions: {
+    show: {
+      resource: ['operatorRegistration'],
+      operation: ['getAllOperators'],
+    },
+  },
   default: '',
   description: 'Filter operators by status',
 },
 {
-  displayName: 'Address',
-  name: 'address',
+  displayName: 'Minimum Stake',
+  name: 'minStake',
   type: 'string',
-  required: true,
   displayOptions: {
     show: {
-      resource: ['operators'],
-      operation: ['getOperator'],
+      resource: ['operatorRegistration'],
+      operation: ['getAllOperators'],
     },
   },
   default: '',
-  description: 'The Ethereum address of the operator',
+  placeholder: '1000000000000000000',
+  description: 'Minimum stake amount in Wei',
 },
 {
-  displayName: 'Address',
-  name: 'address',
+  displayName: 'Metadata URI',
+  name: 'metadataURI',
   type: 'string',
-  required: true,
   displayOptions: {
     show: {
-      resource: ['operators'],
-      operation: ['getOperatorDelegations'],
+      resource: ['operatorRegistration'],
+      operation: ['updateOperator'],
     },
   },
   default: '',
-  description: 'The Ethereum address of the operator',
+  placeholder: 'https://metadata.example.com/operator.json',
+  description: 'Updated URI pointing to operator metadata JSON',
+},
+{
+  displayName: 'Delegation Approver',
+  name: 'delegationApprover',
+  type: 'string',
+  displayOptions: {
+    show: {
+      resource: ['operatorRegistration'],
+      operation: ['updateOperator'],
+    },
+  },
+  default: '',
+  placeholder: '0x742d35Cc6634C0532925a3b8D40',
+  description: 'Updated address that can approve delegations',
+},
+{
+  displayName: 'AVS Address',
+  name: 'avsAddress',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['aVSRegistration'], operation: ['registerAVS', 'getAVS', 'optInToAVS', 'optOutOfAVS'] } },
+  default: '',
+  description: 'Ethereum address of the Actively Validated Service',
+},
+{
+  displayName: 'Metadata URI',
+  name: 'metadataURI',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['aVSRegistration'], operation: ['registerAVS'] } },
+  default: '',
+  description: 'URI pointing to the AVS metadata',
+},
+{
+  displayName: 'Reward Token',
+  name: 'rewardToken',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['aVSRegistration'], operation: ['registerAVS'] } },
+  default: '',
+  description: 'Ethereum address of the reward token',
+},
+{
+  displayName: 'Include Operators',
+  name: 'includeOperators',
+  type: 'boolean',
+  displayOptions: { show: { resource: ['aVSRegistration'], operation: ['getAVS'] } },
+  default: false,
+  description: 'Whether to include registered operators in the response',
+},
+{
+  displayName: 'Page',
+  name: 'page',
+  type: 'number',
+  displayOptions: { show: { resource: ['aVSRegistration'], operation: ['getAllAVS'] } },
+  default: 1,
+  description: 'Page number for pagination',
 },
 {
   displayName: 'Limit',
   name: 'limit',
   type: 'number',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['operators'],
-      operation: ['getOperatorDelegations'],
-    },
-  },
+  displayOptions: { show: { resource: ['aVSRegistration'], operation: ['getAllAVS'] } },
   default: 100,
-  description: 'Maximum number of delegations to return',
+  description: 'Number of results per page',
 },
 {
-  displayName: 'Offset',
-  name: 'offset',
-  type: 'number',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['operators'],
-      operation: ['getOperatorDelegations'],
-    },
-  },
-  default: 0,
-  description: 'Number of delegations to skip',
-},
-{
-  displayName: 'Address',
-  name: 'address',
+  displayName: 'Category',
+  name: 'category',
   type: 'string',
-  required: true,
-  displayOptions: {
-    show: {
-      resource: ['operators'],
-      operation: ['getOperatorAVS'],
-    },
-  },
+  displayOptions: { show: { resource: ['aVSRegistration'], operation: ['getAllAVS'] } },
   default: '',
-  description: 'The Ethereum address of the operator',
+  description: 'Filter AVS by category',
 },
 {
-  displayName: 'Staker Address',
-  name: 'staker',
+  displayName: 'Minimum Stake',
+  name: 'minStake',
   type: 'string',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['delegations'],
-      operation: ['getAllDelegations'],
-    },
-  },
+  displayOptions: { show: { resource: ['aVSRegistration'], operation: ['getAllAVS'] } },
   default: '',
-  description: 'Filter delegations by staker address',
+  description: 'Minimum stake amount filter (in Wei)',
 },
 {
   displayName: 'Operator Address',
-  name: 'operator',
-  type: 'string',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['delegations'],
-      operation: ['getAllDelegations'],
-    },
-  },
-  default: '',
-  description: 'Filter delegations by operator address',
-},
-{
-  displayName: 'Limit',
-  name: 'limit',
-  type: 'number',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['delegations'],
-      operation: ['getAllDelegations'],
-    },
-  },
-  default: 100,
-  description: 'Maximum number of delegations to return',
-},
-{
-  displayName: 'Offset',
-  name: 'offset',
-  type: 'number',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['delegations'],
-      operation: ['getAllDelegations'],
-    },
-  },
-  default: 0,
-  description: 'Number of delegations to skip',
-},
-{
-  displayName: 'Staker Address',
-  name: 'staker',
+  name: 'operatorAddress',
   type: 'string',
   required: true,
-  displayOptions: {
-    show: {
-      resource: ['delegations'],
-      operation: ['getStakerDelegations'],
-    },
-  },
+  displayOptions: { show: { resource: ['aVSRegistration'], operation: ['optInToAVS', 'optOutOfAVS'] } },
   default: '',
-  description: 'The staker address to get delegations for',
-  placeholder: '0x1234567890123456789012345678901234567890',
+  description: 'Ethereum address of the operator',
 },
 {
-  displayName: 'Staker Address',
-  name: 'staker',
+  displayName: 'Signature',
+  name: 'signature',
   type: 'string',
   required: true,
-  displayOptions: {
-    show: {
-      resource: ['delegations'],
-      operation: ['getDelegatedOperator'],
-    },
-  },
+  displayOptions: { show: { resource: ['aVSRegistration'], operation: ['optInToAVS'] } },
   default: '',
-  description: 'The staker address to get the delegated operator for',
-  placeholder: '0x1234567890123456789012345678901234567890',
-},
-{
-  displayName: 'Staker Address',
-  name: 'staker',
-  type: 'string',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['delegations'],
-      operation: ['getDelegationRewards'],
-    },
-  },
-  default: '',
-  description: 'Filter rewards by staker address',
-  placeholder: '0x1234567890123456789012345678901234567890',
-},
-{
-  displayName: 'Operator Address',
-  name: 'operator',
-  type: 'string',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['delegations'],
-      operation: ['getDelegationRewards'],
-    },
-  },
-  default: '',
-  description: 'Filter rewards by operator address',
-  placeholder: '0x1234567890123456789012345678901234567890',
-},
-{
-  displayName: 'Owner Address',
-  name: 'owner',
-  type: 'string',
-  displayOptions: {
-    show: {
-      resource: ['eigenPods'],
-      operation: ['getAllEigenPods'],
-    },
-  },
-  default: '',
-  description: 'Filter EigenPods by owner address',
-},
-{
-  displayName: 'Status',
-  name: 'status',
-  type: 'options',
-  displayOptions: {
-    show: {
-      resource: ['eigenPods'],
-      operation: ['getAllEigenPods'],
-    },
-  },
-  options: [
-    {
-      name: 'Active',
-      value: 'active',
-    },
-    {
-      name: 'Inactive',
-      value: 'inactive',
-    },
-    {
-      name: 'All',
-      value: '',
-    },
-  ],
-  default: '',
-  description: 'Filter EigenPods by status',
-},
-{
-  displayName: 'Limit',
-  name: 'limit',
-  type: 'number',
-  displayOptions: {
-    show: {
-      resource: ['eigenPods'],
-      operation: ['getAllEigenPods'],
-    },
-  },
-  typeOptions: {
-    minValue: 1,
-    maxValue: 1000,
-  },
-  default: 100,
-  description: 'Maximum number of EigenPods to retrieve',
-},
-{
-  displayName: 'Offset',
-  name: 'offset',
-  type: 'number',
-  displayOptions: {
-    show: {
-      resource: ['eigenPods'],
-      operation: ['getAllEigenPods'],
-    },
-  },
-  typeOptions: {
-    minValue: 0,
-  },
-  default: 0,
-  description: 'Number of EigenPods to skip',
-},
-{
-  displayName: 'EigenPod Address',
-  name: 'address',
-  type: 'string',
-  required: true,
-  displayOptions: {
-    show: {
-      resource: ['eigenPods'],
-      operation: ['getEigenPod'],
-    },
-  },
-  default: '',
-  description: 'The EigenPod contract address',
-  placeholder: '0x...',
-},
-{
-  displayName: 'EigenPod Address',
-  name: 'address',
-  type: 'string',
-  required: true,
-  displayOptions: {
-    show: {
-      resource: ['eigenPods'],
-      operation: ['getEigenPodValidators'],
-    },
-  },
-  default: '',
-  description: 'The EigenPod contract address',
-  placeholder: '0x...',
-},
-{
-  displayName: 'Validator Status',
-  name: 'validatorStatus',
-  type: 'options',
-  displayOptions: {
-    show: {
-      resource: ['eigenPods'],
-      operation: ['getEigenPodValidators'],
-    },
-  },
-  options: [
-    {
-      name: 'Active',
-      value: 'active',
-    },
-    {
-      name: 'Exited',
-      value: 'exited',
-    },
-    {
-      name: 'Slashed',
-      value: 'slashed',
-    },
-    {
-      name: 'All',
-      value: '',
-    },
-  ],
-  default: '',
-  description: 'Filter validators by status',
-},
-{
-  displayName: 'EigenPod Address',
-  name: 'address',
-  type: 'string',
-  required: true,
-  displayOptions: {
-    show: {
-      resource: ['eigenPods'],
-      operation: ['getEigenPodWithdrawals'],
-    },
-  },
-  default: '',
-  description: 'The EigenPod contract address',
-  placeholder: '0x...',
-},
-{
-  displayName: 'Limit',
-  name: 'limit',
-  type: 'number',
-  displayOptions: {
-    show: {
-      resource: ['aVS'],
-      operation: ['getAllAVS'],
-    },
-  },
-  default: 100,
-  description: 'Maximum number of AVS to return',
-  typeOptions: {
-    minValue: 1,
-    maxValue: 1000,
-  },
-},
-{
-  displayName: 'Offset',
-  name: 'offset',
-  type: 'number',
-  displayOptions: {
-    show: {
-      resource: ['aVS'],
-      operation: ['getAllAVS'],
-    },
-  },
-  default: 0,
-  description: 'Number of AVS to skip',
-  typeOptions: {
-    minValue: 0,
-  },
-},
-{
-  displayName: 'Status',
-  name: 'status',
-  type: 'options',
-  displayOptions: {
-    show: {
-      resource: ['aVS'],
-      operation: ['getAllAVS'],
-    },
-  },
-  options: [
-    {
-      name: 'All',
-      value: '',
-    },
-    {
-      name: 'Active',
-      value: 'active',
-    },
-    {
-      name: 'Inactive',
-      value: 'inactive',
-    },
-  ],
-  default: '',
-  description: 'Filter AVS by status',
+  description: 'Operator signature for opt-in authorization',
 },
 {
   displayName: 'Address',
   name: 'address',
   type: 'string',
   required: true,
-  displayOptions: {
-    show: {
-      resource: ['aVS'],
-      operation: ['getAVS'],
-    },
-  },
+  displayOptions: { show: { resource: ['rewards'], operation: ['calculateRewards'] } },
   default: '',
-  description: 'The Ethereum address of the AVS',
   placeholder: '0x...',
+  description: 'Ethereum address to calculate rewards for',
+},
+{
+  displayName: 'Token',
+  name: 'token',
+  type: 'string',
+  required: false,
+  displayOptions: { show: { resource: ['rewards'], operation: ['calculateRewards'] } },
+  default: '',
+  description: 'Token address for specific token rewards',
+},
+{
+  displayName: 'Period',
+  name: 'period',
+  type: 'string',
+  required: false,
+  displayOptions: { show: { resource: ['rewards'], operation: ['calculateRewards'] } },
+  default: '',
+  description: 'Time period for reward calculation',
 },
 {
   displayName: 'Address',
   name: 'address',
   type: 'string',
   required: true,
-  displayOptions: {
-    show: {
-      resource: ['aVS'],
-      operation: ['getAVSOperators'],
-    },
-  },
+  displayOptions: { show: { resource: ['rewards'], operation: ['getRewardHistory'] } },
   default: '',
-  description: 'The Ethereum address of the AVS',
   placeholder: '0x...',
+  description: 'Ethereum address to get reward history for',
 },
 {
-  displayName: 'Limit',
-  name: 'limit',
-  type: 'number',
-  displayOptions: {
-    show: {
-      resource: ['aVS'],
-      operation: ['getAVSOperators'],
-    },
-  },
-  default: 100,
-  description: 'Maximum number of operators to return',
-  typeOptions: {
-    minValue: 1,
-    maxValue: 1000,
-  },
-},
-{
-  displayName: 'Offset',
-  name: 'offset',
-  type: 'number',
-  displayOptions: {
-    show: {
-      resource: ['aVS'],
-      operation: ['getAVSOperators'],
-    },
-  },
-  default: 0,
-  description: 'Number of operators to skip',
-  typeOptions: {
-    minValue: 0,
-  },
-},
-{
-  displayName: 'Address',
-  name: 'address',
+  displayName: 'Start Date',
+  name: 'startDate',
   type: 'string',
-  required: true,
-  displayOptions: {
-    show: {
-      resource: ['aVS'],
-      operation: ['getAVSRewards'],
-    },
-  },
+  required: false,
+  displayOptions: { show: { resource: ['rewards'], operation: ['getRewardHistory'] } },
   default: '',
-  description: 'The Ethereum address of the AVS',
-  placeholder: '0x...',
+  description: 'Start date for reward history (ISO format)',
 },
 {
-  displayName: 'Epoch',
-  name: 'epoch',
+  displayName: 'End Date',
+  name: 'endDate',
+  type: 'string',
+  required: false,
+  displayOptions: { show: { resource: ['rewards'], operation: ['getRewardHistory'] } },
+  default: '',
+  description: 'End date for reward history (ISO format)',
+},
+{
+  displayName: 'Token',
+  name: 'token',
+  type: 'string',
+  required: false,
+  displayOptions: { show: { resource: ['rewards'], operation: ['getRewardHistory'] } },
+  default: '',
+  description: 'Token address for specific token rewards',
+},
+{
+  displayName: 'Page',
+  name: 'page',
   type: 'number',
-  displayOptions: {
-    show: {
-      resource: ['aVS'],
-      operation: ['getAVSRewards'],
-    },
-  },
-  default: 0,
-  description: 'The epoch number for reward information. If 0, returns latest epoch',
-  typeOptions: {
-    minValue: 0,
-  },
+  required: false,
+  displayOptions: { show: { resource: ['rewards'], operation: ['getAllDistributions'] } },
+  default: 1,
+  description: 'Page number for pagination',
 },
 {
   displayName: 'Limit',
   name: 'limit',
   type: 'number',
   required: false,
-  displayOptions: {
-    show: {
-      resource: ['restaking'],
-      operation: ['getStrategies'],
-    },
-  },
+  displayOptions: { show: { resource: ['rewards'], operation: ['getAllDistributions'] } },
   default: 100,
-  description: 'Maximum number of strategies to return',
-  typeOptions: {
-    minValue: 1,
-    maxValue: 1000,
-  },
-},
-{
-  displayName: 'Offset',
-  name: 'offset',
-  type: 'number',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['restaking'],
-      operation: ['getStrategies'],
-    },
-  },
-  default: 0,
-  description: 'Number of strategies to skip',
-  typeOptions: {
-    minValue: 0,
-  },
-},
-{
-  displayName: 'Staker Address',
-  name: 'staker',
-  type: 'string',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['restaking'],
-      operation: ['getDeposits'],
-    },
-  },
-  default: '',
-  description: 'Ethereum address of the staker to filter deposits',
-  placeholder: '0x...',
-},
-{
-  displayName: 'Strategy Address',
-  name: 'strategy',
-  type: 'string',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['restaking'],
-      operation: ['getDeposits'],
-    },
-  },
-  default: '',
-  description: 'Strategy contract address to filter deposits',
-  placeholder: '0x...',
-},
-{
-  displayName: 'Limit',
-  name: 'limit',
-  type: 'number',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['restaking'],
-      operation: ['getDeposits'],
-    },
-  },
-  default: 100,
-  description: 'Maximum number of deposits to return',
-  typeOptions: {
-    minValue: 1,
-    maxValue: 1000,
-  },
-},
-{
-  displayName: 'Offset',
-  name: 'offset',
-  type: 'number',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['restaking'],
-      operation: ['getDeposits'],
-    },
-  },
-  default: 0,
-  description: 'Number of deposits to skip',
-  typeOptions: {
-    minValue: 0,
-  },
-},
-{
-  displayName: 'Staker Address',
-  name: 'staker',
-  type: 'string',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['restaking'],
-      operation: ['getWithdrawals'],
-    },
-  },
-  default: '',
-  description: 'Ethereum address of the staker to filter withdrawals',
-  placeholder: '0x...',
-},
-{
-  displayName: 'Strategy Address',
-  name: 'strategy',
-  type: 'string',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['restaking'],
-      operation: ['getWithdrawals'],
-    },
-  },
-  default: '',
-  description: 'Strategy contract address to filter withdrawals',
-  placeholder: '0x...',
-},
-{
-  displayName: 'Status',
-  name: 'status',
-  type: 'options',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['restaking'],
-      operation: ['getWithdrawals'],
-    },
-  },
-  options: [
-    {
-      name: 'All',
-      value: '',
-    },
-    {
-      name: 'Pending',
-      value: 'pending',
-    },
-    {
-      name: 'Completed',
-      value: 'completed',
-    },
-    {
-      name: 'Failed',
-      value: 'failed',
-    },
-  ],
-  default: '',
-  description: 'Filter withdrawals by status',
-},
-{
-  displayName: 'Staker Address',
-  name: 'staker',
-  type: 'string',
-  required: true,
-  displayOptions: {
-    show: {
-      resource: ['restaking'],
-      operation: ['getStakerBalances'],
-    },
-  },
-  default: '',
-  description: 'Ethereum address of the staker',
-  placeholder: '0x...',
-},
-{
-  displayName: 'Strategy Address',
-  name: 'strategy',
-  type: 'string',
-  required: false,
-  displayOptions: {
-    show: {
-      resource: ['restaking'],
-      operation: ['getStakerBalances'],
-    },
-  },
-  default: '',
-  description: 'Strategy contract address to filter balances',
-  placeholder: '0x...',
-},
-{
-  displayName: 'Recipient',
-  name: 'recipient',
-  type: 'string',
-  displayOptions: {
-    show: {
-      resource: ['rewards'],
-      operation: ['getAllRewards'],
-    },
-  },
-  default: '',
-  description: 'Filter rewards by recipient address',
+  description: 'Number of items per page',
 },
 {
   displayName: 'AVS',
   name: 'avs',
   type: 'string',
-  displayOptions: {
-    show: {
-      resource: ['rewards'],
-      operation: ['getAllRewards'],
-    },
-  },
+  required: false,
+  displayOptions: { show: { resource: ['rewards'], operation: ['getAllDistributions'] } },
   default: '',
-  description: 'Filter rewards by AVS address',
+  description: 'AVS address to filter distributions',
 },
 {
-  displayName: 'Limit',
-  name: 'limit',
-  type: 'number',
-  displayOptions: {
-    show: {
-      resource: ['rewards'],
-      operation: ['getAllRewards'],
-    },
-  },
-  default: 100,
-  description: 'Maximum number of records to return',
-},
-{
-  displayName: 'Offset',
-  name: 'offset',
-  type: 'number',
-  displayOptions: {
-    show: {
-      resource: ['rewards'],
-      operation: ['getAllRewards'],
-    },
-  },
-  default: 0,
-  description: 'Number of records to skip',
+  displayName: 'Token',
+  name: 'token',
+  type: 'string',
+  required: false,
+  displayOptions: { show: { resource: ['rewards'], operation: ['getAllDistributions'] } },
+  default: '',
+  description: 'Token address for specific token distributions',
 },
 {
   displayName: 'Address',
   name: 'address',
   type: 'string',
   required: true,
-  displayOptions: {
-    show: {
-      resource: ['rewards'],
-      operation: ['getAddressRewards'],
-    },
-  },
+  displayOptions: { show: { resource: ['rewards'], operation: ['claimRewards'] } },
   default: '',
-  description: 'The Ethereum address to get rewards for',
+  placeholder: '0x...',
+  description: 'Address claiming rewards',
 },
 {
-  displayName: 'Epoch',
-  name: 'epoch',
-  type: 'number',
-  displayOptions: {
-    show: {
-      resource: ['rewards'],
-      operation: ['getAddressRewards', 'getRewardDistributions'],
-    },
-  },
-  default: 0,
-  description: 'Filter by specific epoch',
-},
-{
-  displayName: 'AVS',
-  name: 'avs',
+  displayName: 'Tokens',
+  name: 'tokens',
   type: 'string',
-  displayOptions: {
-    show: {
-      resource: ['rewards'],
-      operation: ['getRewardDistributions'],
-    },
-  },
+  required: true,
+  displayOptions: { show: { resource: ['rewards'], operation: ['claimRewards'] } },
   default: '',
-  description: 'Filter distributions by AVS address',
+  description: 'Comma-separated list of token addresses to claim',
 },
 {
-  displayName: 'Recipient',
-  name: 'recipient',
+  displayName: 'Merkle Proofs',
+  name: 'merkleProofs',
+  type: 'json',
+  required: true,
+  displayOptions: { show: { resource: ['rewards'], operation: ['claimRewards'] } },
+  default: '{}',
+  description: 'JSON object containing merkle proofs for each token',
+},
+{
+  displayName: 'Root',
+  name: 'root',
   type: 'string',
-  displayOptions: {
-    show: {
-      resource: ['rewards'],
-      operation: ['getRewardClaims'],
-    },
-  },
+  required: true,
+  displayOptions: { show: { resource: ['rewards'], operation: ['getMerkleProof'] } },
   default: '',
-  description: 'Filter claims by recipient address',
+  description: 'Merkle tree root hash',
 },
 {
-  displayName: 'Status',
-  name: 'status',
-  type: 'options',
-  options: [
-    {
-      name: 'All',
-      value: '',
-    },
-    {
-      name: 'Pending',
-      value: 'pending',
-    },
-    {
-      name: 'Completed',
-      value: 'completed',
-    },
-    {
-      name: 'Failed',
-      value: 'failed',
-    },
-  ],
-  displayOptions: {
-    show: {
-      resource: ['rewards'],
-      operation: ['getRewardClaims'],
-    },
-  },
+  displayName: 'Address',
+  name: 'address',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['rewards'], operation: ['getMerkleProof'] } },
   default: '',
-  description: 'Filter claims by status',
+  placeholder: '0x...',
+  description: 'Address to generate proof for',
+},
+{
+  displayName: 'Amount',
+  name: 'amount',
+  type: 'string',
+  required: true,
+  displayOptions: { show: { resource: ['rewards'], operation: ['getMerkleProof'] } },
+  default: '',
+  description: 'Reward amount to generate proof for',
 },
     ],
   };
@@ -1182,16 +1003,16 @@ export class EigenLayer implements INodeType {
     const resource = this.getNodeParameter('resource', 0) as string;
 
     switch (resource) {
-      case 'operators':
-        return [await executeOperatorsOperations.call(this, items)];
-      case 'delegations':
-        return [await executeDelegationsOperations.call(this, items)];
-      case 'eigenPods':
-        return [await executeEigenPodsOperations.call(this, items)];
-      case 'aVS':
-        return [await executeAVSOperations.call(this, items)];
       case 'restaking':
         return [await executeRestakingOperations.call(this, items)];
+      case 'delegation':
+        return [await executeDelegationOperations.call(this, items)];
+      case 'eigenPods':
+        return [await executeEigenPodsOperations.call(this, items)];
+      case 'operatorRegistration':
+        return [await executeOperatorRegistrationOperations.call(this, items)];
+      case 'aVSRegistration':
+        return [await executeAVSRegistrationOperations.call(this, items)];
       case 'rewards':
         return [await executeRewardsOperations.call(this, items)];
       default:
@@ -1204,7 +1025,7 @@ export class EigenLayer implements INodeType {
 // Resource Handler Functions
 // ============================================================
 
-async function executeOperatorsOperations(
+async function executeRestakingOperations(
   this: IExecuteFunctions,
   items: INodeExecutionData[],
 ): Promise<INodeExecutionData[]> {
@@ -1217,27 +1038,76 @@ async function executeOperatorsOperations(
       let result: any;
 
       switch (operation) {
-        case 'getAllOperators': {
+        case 'stakeTokens': {
+          const token = this.getNodeParameter('token', i) as string;
+          const amount = this.getNodeParameter('amount', i) as string;
+          const operator = this.getNodeParameter('operator', i) as string;
+
+          const options: any = {
+            method: 'POST',
+            url: `${credentials.baseUrl}/restaking/stake`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: {
+              token,
+              amount,
+              operator,
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getPositions': {
+          const address = this.getNodeParameter('address', i) as string;
+          const token = this.getNodeParameter('token', i) as string;
+
+          let url = `${credentials.baseUrl}/restaking/positions/${address}`;
+          const queryParams: string[] = [];
+
+          if (token) {
+            queryParams.push(`token=${encodeURIComponent(token)}`);
+          }
+
+          if (queryParams.length > 0) {
+            url += `?${queryParams.join('&')}`;
+          }
+
+          const options: any = {
+            method: 'GET',
+            url,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getAllPositions': {
+          const page = this.getNodeParameter('page', i) as number;
           const limit = this.getNodeParameter('limit', i) as number;
-          const offset = this.getNodeParameter('offset', i) as number;
-          const status = this.getNodeParameter('status', i) as string;
+          const token = this.getNodeParameter('token', i) as string;
 
-          const queryParams: any = {};
-          if (limit) queryParams.limit = limit.toString();
-          if (offset) queryParams.offset = offset.toString();
-          if (status) queryParams.status = status;
+          const queryParams: string[] = [];
+          queryParams.push(`page=${page}`);
+          queryParams.push(`limit=${limit}`);
 
-          const queryString = new URLSearchParams(queryParams).toString();
-          const url = queryString ? 
-            `${credentials.baseUrl}/operators?${queryString}` : 
-            `${credentials.baseUrl}/operators`;
+          if (token) {
+            queryParams.push(`token=${encodeURIComponent(token)}`);
+          }
 
           const options: any = {
             method: 'GET',
-            url: url,
+            url: `${credentials.baseUrl}/restaking/positions?${queryParams.join('&')}`,
             headers: {
               'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
             },
             json: true,
           };
@@ -1246,20 +1116,23 @@ async function executeOperatorsOperations(
           break;
         }
 
-        case 'getOperator': {
-          const address = this.getNodeParameter('address', i) as string;
+        case 'updatePosition': {
+          const positionId = this.getNodeParameter('positionId', i) as string;
+          const operator = this.getNodeParameter('operator', i) as string;
+          const amount = this.getNodeParameter('amount', i) as string;
 
-          if (!address) {
-            throw new NodeOperationError(this.getNode(), 'Address is required');
-          }
+          const body: any = {};
+          if (operator) body.operator = operator;
+          if (amount) body.amount = amount;
 
           const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/operators/${address}`,
+            method: 'PATCH',
+            url: `${credentials.baseUrl}/restaking/positions/${positionId}`,
             headers: {
               'Authorization': `Bearer ${credentials.apiKey}`,
               'Content-Type': 'application/json',
             },
+            body,
             json: true,
           };
 
@@ -1267,51 +1140,22 @@ async function executeOperatorsOperations(
           break;
         }
 
-        case 'getOperatorDelegations': {
-          const address = this.getNodeParameter('address', i) as string;
-          const limit = this.getNodeParameter('limit', i) as number;
-          const offset = this.getNodeParameter('offset', i) as number;
-
-          if (!address) {
-            throw new NodeOperationError(this.getNode(), 'Address is required');
-          }
-
-          const queryParams: any = {};
-          if (limit) queryParams.limit = limit.toString();
-          if (offset) queryParams.offset = offset.toString();
-
-          const queryString = new URLSearchParams(queryParams).toString();
-          const url = queryString ? 
-            `${credentials.baseUrl}/operators/${address}/delegations?${queryString}` : 
-            `${credentials.baseUrl}/operators/${address}/delegations`;
+        case 'unstakeTokens': {
+          const token = this.getNodeParameter('token', i) as string;
+          const amount = this.getNodeParameter('amount', i) as string;
+          const positionId = this.getNodeParameter('positionId', i) as string;
 
           const options: any = {
-            method: 'GET',
-            url: url,
+            method: 'DELETE',
+            url: `${credentials.baseUrl}/restaking/unstake`,
             headers: {
               'Authorization': `Bearer ${credentials.apiKey}`,
               'Content-Type': 'application/json',
             },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getOperatorAVS': {
-          const address = this.getNodeParameter('address', i) as string;
-
-          if (!address) {
-            throw new NodeOperationError(this.getNode(), 'Address is required');
-          }
-
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/operators/${address}/avs`,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
+            body: {
+              token,
+              amount,
+              positionId,
             },
             json: true,
           };
@@ -1324,13 +1168,16 @@ async function executeOperatorsOperations(
           throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
       }
 
-      returnData.push({ json: result, pairedItem: { item: i } });
+      returnData.push({
+        json: result,
+        pairedItem: { item: i },
+      });
 
     } catch (error: any) {
       if (this.continueOnFail()) {
         returnData.push({
-          json: { error: error.message || 'Unknown error occurred' },
-          pairedItem: { item: i }
+          json: { error: error.message },
+          pairedItem: { item: i },
         });
       } else {
         if (error.response) {
@@ -1347,7 +1194,7 @@ async function executeOperatorsOperations(
   return returnData;
 }
 
-async function executeDelegationsOperations(
+async function executeDelegationOperations(
   this: IExecuteFunctions,
   items: INodeExecutionData[],
 ): Promise<INodeExecutionData[]> {
@@ -1358,29 +1205,91 @@ async function executeDelegationsOperations(
   for (let i = 0; i < items.length; i++) {
     try {
       let result: any;
-      
+
       switch (operation) {
+        case 'delegateToOperator': {
+          const operator = this.getNodeParameter('operator', i) as string;
+          const amount = this.getNodeParameter('amount', i) as string;
+          const token = this.getNodeParameter('token', i) as string;
+
+          const options: any = {
+            method: 'POST',
+            url: `${credentials.baseUrl}/delegation/delegate`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: {
+              operator,
+              amount,
+              token,
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getDelegations': {
+          const address = this.getNodeParameter('address', i) as string;
+          const operator = this.getNodeParameter('operator', i) as string;
+
+          let url = `${credentials.baseUrl}/delegation/delegations/${address}`;
+          const params: string[] = [];
+
+          if (operator) {
+            params.push(`operator=${encodeURIComponent(operator)}`);
+          }
+
+          if (params.length > 0) {
+            url += `?${params.join('&')}`;
+          }
+
+          const options: any = {
+            method: 'GET',
+            url,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
         case 'getAllDelegations': {
-          const staker = this.getNodeParameter('staker', i, '') as string;
-          const operator = this.getNodeParameter('operator', i, '') as string;
-          const limit = this.getNodeParameter('limit', i, 100) as number;
-          const offset = this.getNodeParameter('offset', i, 0) as number;
+          const page = this.getNodeParameter('page', i) as number;
+          const limit = this.getNodeParameter('limit', i) as number;
+          const operator = this.getNodeParameter('operator', i) as string;
+          const status = this.getNodeParameter('status', i) as string;
 
-          const queryParams: any = {};
-          if (staker) queryParams.staker = staker;
-          if (operator) queryParams.operator = operator;
-          if (limit) queryParams.limit = limit.toString();
-          if (offset) queryParams.offset = offset.toString();
+          let url = `${credentials.baseUrl}/delegation/delegations`;
+          const params: string[] = [];
 
-          const queryString = new URLSearchParams(queryParams).toString();
-          const url = `${credentials.baseUrl}/delegations${queryString ? '?' + queryString : ''}`;
+          if (page) {
+            params.push(`page=${page}`);
+          }
+          if (limit) {
+            params.push(`limit=${limit}`);
+          }
+          if (operator) {
+            params.push(`operator=${encodeURIComponent(operator)}`);
+          }
+          if (status) {
+            params.push(`status=${status}`);
+          }
+
+          if (params.length > 0) {
+            url += `?${params.join('&')}`;
+          }
 
           const options: any = {
             method: 'GET',
             url,
             headers: {
               'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
             },
             json: true,
           };
@@ -1389,20 +1298,24 @@ async function executeDelegationsOperations(
           break;
         }
 
-        case 'getStakerDelegations': {
-          const staker = this.getNodeParameter('staker', i) as string;
-          
-          if (!staker) {
-            throw new NodeOperationError(this.getNode(), 'Staker address is required');
+        case 'updateDelegation': {
+          const delegationId = this.getNodeParameter('delegationId', i) as string;
+          const amount = this.getNodeParameter('amount', i) as string;
+          const operator = this.getNodeParameter('operator', i) as string;
+
+          const body: any = { amount };
+          if (operator) {
+            body.operator = operator;
           }
 
           const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/delegations/${staker}`,
+            method: 'PATCH',
+            url: `${credentials.baseUrl}/delegation/delegations/${delegationId}`,
             headers: {
               'Authorization': `Bearer ${credentials.apiKey}`,
               'Content-Type': 'application/json',
             },
+            body,
             json: true,
           };
 
@@ -1410,44 +1323,20 @@ async function executeDelegationsOperations(
           break;
         }
 
-        case 'getDelegatedOperator': {
-          const staker = this.getNodeParameter('staker', i) as string;
-          
-          if (!staker) {
-            throw new NodeOperationError(this.getNode(), 'Staker address is required');
-          }
+        case 'undelegateFromOperator': {
+          const delegationId = this.getNodeParameter('delegationId', i) as string;
+          const amount = this.getNodeParameter('amount', i) as string;
 
           const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/delegations/${staker}/operator`,
+            method: 'DELETE',
+            url: `${credentials.baseUrl}/delegation/undelegate`,
             headers: {
               'Authorization': `Bearer ${credentials.apiKey}`,
               'Content-Type': 'application/json',
             },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getDelegationRewards': {
-          const staker = this.getNodeParameter('staker', i, '') as string;
-          const operator = this.getNodeParameter('operator', i, '') as string;
-
-          const queryParams: any = {};
-          if (staker) queryParams.staker = staker;
-          if (operator) queryParams.operator = operator;
-
-          const queryString = new URLSearchParams(queryParams).toString();
-          const url = `${credentials.baseUrl}/delegations/rewards${queryString ? '?' + queryString : ''}`;
-
-          const options: any = {
-            method: 'GET',
-            url,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
+            body: {
+              delegationId,
+              amount,
             },
             json: true,
           };
@@ -1460,22 +1349,21 @@ async function executeDelegationsOperations(
           throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
       }
 
-      returnData.push({ 
-        json: result, 
-        pairedItem: { item: i } 
-      });
-
+      returnData.push({ json: result, pairedItem: { item: i } });
     } catch (error: any) {
       if (this.continueOnFail()) {
-        returnData.push({ 
-          json: { error: error.message }, 
-          pairedItem: { item: i } 
+        returnData.push({
+          json: { error: error.message },
+          pairedItem: { item: i },
         });
       } else {
-        if (error.httpCode) {
-          throw new NodeApiError(this.getNode(), error);
+        if (error.response) {
+          throw new NodeApiError(this.getNode(), error.response.body || error.response, { 
+            message: error.message,
+            httpCode: error.response.statusCode?.toString() || 'unknown',
+          });
         }
-        throw new NodeOperationError(this.getNode(), error.message);
+        throw new NodeOperationError(this.getNode(), error.message || 'Unknown error occurred');
       }
     }
   }
@@ -1484,6 +1372,185 @@ async function executeDelegationsOperations(
 }
 
 async function executeEigenPodsOperations(
+	this: IExecuteFunctions,
+	items: INodeExecutionData[],
+): Promise<INodeExecutionData[]> {
+	const returnData: INodeExecutionData[] = [];
+	const operation = this.getNodeParameter('operation', 0) as string;
+	const credentials = await this.getCredentials('eigenlayerApi') as any;
+
+	for (let i = 0; i < items.length; i++) {
+		try {
+			let result: any;
+
+			switch (operation) {
+				case 'createEigenPod': {
+					const owner = this.getNodeParameter('owner', i) as string;
+					const withdrawalCredentials = this.getNodeParameter('withdrawalCredentials', i) as string;
+
+					const options: any = {
+						method: 'POST',
+						url: `${credentials.baseUrl}/eigenpods/create`,
+						headers: {
+							'Authorization': `Bearer ${credentials.apiKey}`,
+							'Content-Type': 'application/json',
+						},
+						body: {
+							owner,
+							withdrawalCredentials,
+						},
+						json: true,
+					};
+
+					result = await this.helpers.httpRequest(options) as any;
+					break;
+				}
+
+				case 'getEigenPod': {
+					const podAddress = this.getNodeParameter('podAddress', i) as string;
+					const includeValidators = this.getNodeParameter('includeValidators', i) as boolean;
+
+					const queryParams: any = {};
+					if (includeValidators) {
+						queryParams.includeValidators = 'true';
+					}
+
+					const queryString = new URLSearchParams(queryParams).toString();
+					const url = `${credentials.baseUrl}/eigenpods/${podAddress}${queryString ? `?${queryString}` : ''}`;
+
+					const options: any = {
+						method: 'GET',
+						url,
+						headers: {
+							'Authorization': `Bearer ${credentials.apiKey}`,
+						},
+						json: true,
+					};
+
+					result = await this.helpers.httpRequest(options) as any;
+					break;
+				}
+
+				case 'getAllEigenPods': {
+					const page = this.getNodeParameter('page', i) as number;
+					const limit = this.getNodeParameter('limit', i) as number;
+					const ownerFilter = this.getNodeParameter('ownerFilter', i) as string;
+					const statusFilter = this.getNodeParameter('statusFilter', i) as string;
+
+					const queryParams: any = {
+						page: page.toString(),
+						limit: limit.toString(),
+					};
+
+					if (ownerFilter) {
+						queryParams.owner = ownerFilter;
+					}
+					if (statusFilter) {
+						queryParams.status = statusFilter;
+					}
+
+					const queryString = new URLSearchParams(queryParams).toString();
+					const url = `${credentials.baseUrl}/eigenpods?${queryString}`;
+
+					const options: any = {
+						method: 'GET',
+						url,
+						headers: {
+							'Authorization': `Bearer ${credentials.apiKey}`,
+						},
+						json: true,
+					};
+
+					result = await this.helpers.httpRequest(options) as any;
+					break;
+				}
+
+				case 'verifyValidators': {
+					const podAddress = this.getNodeParameter('podAddress', i) as string;
+					const validatorIndices = this.getNodeParameter('validatorIndices', i) as string;
+					const proofs = this.getNodeParameter('proofs', i) as string;
+
+					let parsedProofs: any;
+					try {
+						parsedProofs = typeof proofs === 'string' ? JSON.parse(proofs) : proofs;
+					} catch (error: any) {
+						throw new NodeOperationError(this.getNode(), `Invalid JSON in proofs parameter: ${error.message}`, { itemIndex: i });
+					}
+
+					const indices = validatorIndices.split(',').map(index => parseInt(index.trim(), 10));
+
+					const options: any = {
+						method: 'PATCH',
+						url: `${credentials.baseUrl}/eigenpods/${podAddress}/verify`,
+						headers: {
+							'Authorization': `Bearer ${credentials.apiKey}`,
+							'Content-Type': 'application/json',
+						},
+						body: {
+							validatorIndices: indices,
+							proofs: parsedProofs,
+						},
+						json: true,
+					};
+
+					result = await this.helpers.httpRequest(options) as any;
+					break;
+				}
+
+				case 'withdrawFromEigenPod': {
+					const podAddress = this.getNodeParameter('podAddress', i) as string;
+					const amount = this.getNodeParameter('amount', i) as string;
+					const recipient = this.getNodeParameter('recipient', i) as string;
+
+					const options: any = {
+						method: 'DELETE',
+						url: `${credentials.baseUrl}/eigenpods/${podAddress}/withdraw`,
+						headers: {
+							'Authorization': `Bearer ${credentials.apiKey}`,
+							'Content-Type': 'application/json',
+						},
+						body: {
+							amount,
+							recipient,
+						},
+						json: true,
+					};
+
+					result = await this.helpers.httpRequest(options) as any;
+					break;
+				}
+
+				default:
+					throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`, { itemIndex: i });
+			}
+
+			returnData.push({
+				json: result,
+				pairedItem: { item: i },
+			});
+
+		} catch (error: any) {
+			if (this.continueOnFail()) {
+				returnData.push({
+					json: { error: error.message },
+					pairedItem: { item: i },
+				});
+			} else {
+        if (error.response) {
+          throw new NodeApiError(this.getNode(), error.response.body || error.response, { 
+            message: error.message,
+            httpCode: error.response.statusCode?.toString() || 'unknown',
+          });
+        }
+        throw new NodeOperationError(this.getNode(), error.message || 'Unknown error occurred');
+			}
+		}
+	}
+
+	return returnData;
+}
+
+async function executeOperatorRegistrationOperations(
   this: IExecuteFunctions,
   items: INodeExecutionData[],
 ): Promise<INodeExecutionData[]> {
@@ -1496,24 +1563,79 @@ async function executeEigenPodsOperations(
       let result: any;
 
       switch (operation) {
-        case 'getAllEigenPods': {
-          const owner = this.getNodeParameter('owner', i) as string;
-          const status = this.getNodeParameter('status', i) as string;
+        case 'registerOperator': {
+          const operatorAddress = this.getNodeParameter('operatorAddress', i) as string;
+          const metadataURI = this.getNodeParameter('metadataURI', i) as string;
+          const delegationApprover = this.getNodeParameter('delegationApprover', i) as string;
+
+          const body: any = {
+            operatorAddress,
+            metadataURI,
+          };
+
+          if (delegationApprover) {
+            body.delegationApprover = delegationApprover;
+          }
+
+          const options: any = {
+            method: 'POST',
+            url: `${credentials.baseUrl}/operators/register`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body,
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getOperator': {
+          const operatorAddress = this.getNodeParameter('operatorAddress', i) as string;
+          const includeAVS = this.getNodeParameter('includeAVS', i) as boolean;
+
+          const queryParams = new URLSearchParams();
+          if (includeAVS) {
+            queryParams.append('includeAVS', 'true');
+          }
+
+          const options: any = {
+            method: 'GET',
+            url: `${credentials.baseUrl}/operators/${operatorAddress}${queryParams.toString() ? '?' + queryParams.toString() : ''}`,
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+            },
+            json: true,
+          };
+
+          result = await this.helpers.httpRequest(options) as any;
+          break;
+        }
+
+        case 'getAllOperators': {
+          const page = this.getNodeParameter('page', i) as number;
           const limit = this.getNodeParameter('limit', i) as number;
-          const offset = this.getNodeParameter('offset', i) as number;
+          const status = this.getNodeParameter('status', i) as string;
+          const minStake = this.getNodeParameter('minStake', i) as string;
 
-          const params = new URLSearchParams();
-          if (owner) params.append('owner', owner);
-          if (status) params.append('status', status);
-          params.append('limit', limit.toString());
-          params.append('offset', offset.toString());
+          const queryParams = new URLSearchParams();
+          queryParams.append('page', page.toString());
+          queryParams.append('limit', limit.toString());
+
+          if (status) {
+            queryParams.append('status', status);
+          }
+          if (minStake) {
+            queryParams.append('minStake', minStake);
+          }
 
           const options: any = {
             method: 'GET',
-            url: `${credentials.baseUrl}/eigenpods?${params.toString()}`,
+            url: `${credentials.baseUrl}/operators?${queryParams.toString()}`,
             headers: {
               'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
             },
             json: true,
           };
@@ -1522,23 +1644,28 @@ async function executeEigenPodsOperations(
           break;
         }
 
-        case 'getEigenPod': {
-          const address = this.getNodeParameter('address', i) as string;
+        case 'updateOperator': {
+          const operatorAddress = this.getNodeParameter('operatorAddress', i) as string;
+          const metadataURI = this.getNodeParameter('metadataURI', i) as string;
+          const delegationApprover = this.getNodeParameter('delegationApprover', i) as string;
 
-          if (!address || !address.startsWith('0x')) {
-            throw new NodeOperationError(
-              this.getNode(),
-              'Invalid EigenPod address. Must be a valid Ethereum address starting with 0x',
-            );
+          const body: any = {};
+
+          if (metadataURI) {
+            body.metadataURI = metadataURI;
+          }
+          if (delegationApprover) {
+            body.delegationApprover = delegationApprover;
           }
 
           const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/eigenpods/${address}`,
+            method: 'PATCH',
+            url: `${credentials.baseUrl}/operators/${operatorAddress}`,
             headers: {
               'Authorization': `Bearer ${credentials.apiKey}`,
               'Content-Type': 'application/json',
             },
+            body,
             json: true,
           };
 
@@ -1546,51 +1673,14 @@ async function executeEigenPodsOperations(
           break;
         }
 
-        case 'getEigenPodValidators': {
-          const address = this.getNodeParameter('address', i) as string;
-          const validatorStatus = this.getNodeParameter('validatorStatus', i) as string;
-
-          if (!address || !address.startsWith('0x')) {
-            throw new NodeOperationError(
-              this.getNode(),
-              'Invalid EigenPod address. Must be a valid Ethereum address starting with 0x',
-            );
-          }
-
-          const params = new URLSearchParams();
-          if (validatorStatus) params.append('status', validatorStatus);
-
-          const queryString = params.toString() ? `?${params.toString()}` : '';
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/eigenpods/${address}/validators${queryString}`,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getEigenPodWithdrawals': {
-          const address = this.getNodeParameter('address', i) as string;
-
-          if (!address || !address.startsWith('0x')) {
-            throw new NodeOperationError(
-              this.getNode(),
-              'Invalid EigenPod address. Must be a valid Ethereum address starting with 0x',
-            );
-          }
+        case 'deregisterOperator': {
+          const operatorAddress = this.getNodeParameter('operatorAddress', i) as string;
 
           const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/eigenpods/${address}/withdrawals`,
+            method: 'DELETE',
+            url: `${credentials.baseUrl}/operators/${operatorAddress}/deregister`,
             headers: {
               'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
             },
             json: true,
           };
@@ -1607,7 +1697,6 @@ async function executeEigenPodsOperations(
         json: result,
         pairedItem: { item: i },
       });
-
     } catch (error: any) {
       if (this.continueOnFail()) {
         returnData.push({
@@ -1615,10 +1704,13 @@ async function executeEigenPodsOperations(
           pairedItem: { item: i },
         });
       } else {
-        if (error.httpCode) {
-          throw new NodeApiError(this.getNode(), error);
+        if (error.response) {
+          throw new NodeApiError(this.getNode(), error.response.body || error.response, { 
+            message: error.message,
+            httpCode: error.response.statusCode?.toString() || 'unknown',
+          });
         }
-        throw new NodeOperationError(this.getNode(), error.message);
+        throw new NodeOperationError(this.getNode(), error.message || 'Unknown error occurred');
       }
     }
   }
@@ -1626,7 +1718,7 @@ async function executeEigenPodsOperations(
   return returnData;
 }
 
-async function executeAVSOperations(
+async function executeAVSRegistrationOperations(
   this: IExecuteFunctions,
   items: INodeExecutionData[],
 ): Promise<INodeExecutionData[]> {
@@ -1639,30 +1731,26 @@ async function executeAVSOperations(
       let result: any;
 
       switch (operation) {
-        case 'getAllAVS': {
-          const limit = this.getNodeParameter('limit', i, 100) as number;
-          const offset = this.getNodeParameter('offset', i, 0) as number;
-          const status = this.getNodeParameter('status', i, '') as string;
+        case 'registerAVS': {
+          const avsAddress = this.getNodeParameter('avsAddress', i) as string;
+          const metadataURI = this.getNodeParameter('metadataURI', i) as string;
+          const rewardToken = this.getNodeParameter('rewardToken', i) as string;
 
-          const queryParams: any = {
-            limit: limit.toString(),
-            offset: offset.toString(),
+          const body = {
+            avsAddress,
+            metadataURI,
+            rewardToken,
           };
 
-          if (status) {
-            queryParams.status = status;
-          }
-
-          const queryString = new URLSearchParams(queryParams).toString();
-
           const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/avs?${queryString}`,
+            method: 'POST',
+            url: `${credentials.baseUrl}/avs/register`,
             headers: {
               'Authorization': `Bearer ${credentials.apiKey}`,
               'Content-Type': 'application/json',
             },
             json: true,
+            body,
           };
 
           result = await this.helpers.httpRequest(options) as any;
@@ -1670,77 +1758,23 @@ async function executeAVSOperations(
         }
 
         case 'getAVS': {
-          const address = this.getNodeParameter('address', i) as string;
-
-          if (!address) {
-            throw new NodeOperationError(this.getNode(), 'AVS address is required');
-          }
-
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/avs/${address}`,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getAVSOperators': {
-          const address = this.getNodeParameter('address', i) as string;
-          const limit = this.getNodeParameter('limit', i, 100) as number;
-          const offset = this.getNodeParameter('offset', i, 0) as number;
-
-          if (!address) {
-            throw new NodeOperationError(this.getNode(), 'AVS address is required');
-          }
-
-          const queryParams = new URLSearchParams({
-            limit: limit.toString(),
-            offset: offset.toString(),
-          });
-
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/avs/${address}/operators?${queryParams.toString()}`,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getAVSRewards': {
-          const address = this.getNodeParameter('address', i) as string;
-          const epoch = this.getNodeParameter('epoch', i, 0) as number;
-
-          if (!address) {
-            throw new NodeOperationError(this.getNode(), 'AVS address is required');
-          }
+          const avsAddress = this.getNodeParameter('avsAddress', i) as string;
+          const includeOperators = this.getNodeParameter('includeOperators', i) as boolean;
 
           const queryParams: any = {};
-          if (epoch > 0) {
-            queryParams.epoch = epoch.toString();
+          if (includeOperators) {
+            queryParams.includeOperators = 'true';
           }
 
           const queryString = Object.keys(queryParams).length > 0 
-            ? `?${new URLSearchParams(queryParams).toString()}`
+            ? '?' + new URLSearchParams(queryParams).toString() 
             : '';
 
           const options: any = {
             method: 'GET',
-            url: `${credentials.baseUrl}/avs/${address}/rewards${queryString}`,
+            url: `${credentials.baseUrl}/avs/${avsAddress}${queryString}`,
             headers: {
               'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
             },
             json: true,
           };
@@ -1749,305 +1783,22 @@ async function executeAVSOperations(
           break;
         }
 
-        default:
-          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
-      }
+        case 'getAllAVS': {
+          const page = this.getNodeParameter('page', i) as number;
+          const limit = this.getNodeParameter('limit', i) as number;
+          const category = this.getNodeParameter('category', i) as string;
+          const minStake = this.getNodeParameter('minStake', i) as string;
 
-      returnData.push({ 
-        json: result,
-        pairedItem: { item: i },
-      });
-
-    } catch (error: any) {
-      if (this.continueOnFail()) {
-        returnData.push({
-          json: { error: error.message },
-          pairedItem: { item: i },
-        });
-      } else {
-        if (error.httpCode) {
-          throw new NodeApiError(this.getNode(), error);
-        }
-        throw new NodeOperationError(this.getNode(), error.message);
-      }
-    }
-  }
-
-  return returnData;
-}
-
-async function executeRestakingOperations(
-  this: IExecuteFunctions,
-  items: INodeExecutionData[],
-): Promise<INodeExecutionData[]> {
-  const returnData: INodeExecutionData[] = [];
-  const operation = this.getNodeParameter('operation', 0) as string;
-  const credentials = await this.getCredentials('eigenlayerApi') as any;
-
-  for (let i = 0; i < items.length; i++) {
-    try {
-      let result: any;
-
-      switch (operation) {
-        case 'getStrategies': {
-          const limit = this.getNodeParameter('limit', i, 100) as number;
-          const offset = this.getNodeParameter('offset', i, 0) as number;
-
-          const queryParams = new URLSearchParams();
-          if (limit) queryParams.append('limit', limit.toString());
-          if (offset) queryParams.append('offset', offset.toString());
-
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/restaking/strategies${queryParams.toString() ? '?' + queryParams.toString() : ''}`,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            json: true,
+          const queryParams: any = {
+            page: page.toString(),
+            limit: limit.toString(),
           };
 
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getDeposits': {
-          const staker = this.getNodeParameter('staker', i, '') as string;
-          const strategy = this.getNodeParameter('strategy', i, '') as string;
-          const limit = this.getNodeParameter('limit', i, 100) as number;
-          const offset = this.getNodeParameter('offset', i, 0) as number;
-
-          const queryParams = new URLSearchParams();
-          if (staker) queryParams.append('staker', staker);
-          if (strategy) queryParams.append('strategy', strategy);
-          if (limit) queryParams.append('limit', limit.toString());
-          if (offset) queryParams.append('offset', offset.toString());
-
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/restaking/deposits${queryParams.toString() ? '?' + queryParams.toString() : ''}`,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getWithdrawals': {
-          const staker = this.getNodeParameter('staker', i, '') as string;
-          const strategy = this.getNodeParameter('strategy', i, '') as string;
-          const status = this.getNodeParameter('status', i, '') as string;
-
-          const queryParams = new URLSearchParams();
-          if (staker) queryParams.append('staker', staker);
-          if (strategy) queryParams.append('strategy', strategy);
-          if (status) queryParams.append('status', status);
-
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/restaking/withdrawals${queryParams.toString() ? '?' + queryParams.toString() : ''}`,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getStakerBalances': {
-          const staker = this.getNodeParameter('staker', i) as string;
-          const strategy = this.getNodeParameter('strategy', i, '') as string;
-
-          if (!staker) {
-            throw new NodeOperationError(this.getNode(), 'Staker address is required');
+          if (category) {
+            queryParams.category = category;
+          }
+          if (minStake) {
+            queryParams.minStake = minStake;
           }
 
-          const queryParams = new URLSearchParams();
-          if (strategy) queryParams.append('strategy', strategy);
-
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/restaking/balances/${staker}${queryParams.toString() ? '?' + queryParams.toString() : ''}`,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        default:
-          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
-      }
-
-      returnData.push({
-        json: result,
-        pairedItem: { item: i },
-      });
-    } catch (error: any) {
-      if (this.continueOnFail()) {
-        returnData.push({
-          json: { error: error.message },
-          pairedItem: { item: i },
-        });
-      } else {
-        if (error.httpCode) {
-          throw new NodeApiError(this.getNode(), error);
-        }
-        throw new NodeOperationError(this.getNode(), error.message);
-      }
-    }
-  }
-
-  return returnData;
-}
-
-async function executeRewardsOperations(
-  this: IExecuteFunctions,
-  items: INodeExecutionData[],
-): Promise<INodeExecutionData[]> {
-  const returnData: INodeExecutionData[] = [];
-  const operation = this.getNodeParameter('operation', 0) as string;
-  const credentials = await this.getCredentials('eigenlayerApi') as any;
-
-  for (let i = 0; i < items.length; i++) {
-    try {
-      let result: any;
-      
-      switch (operation) {
-        case 'getAllRewards': {
-          const recipient = this.getNodeParameter('recipient', i) as string;
-          const avs = this.getNodeParameter('avs', i) as string;
-          const limit = this.getNodeParameter('limit', i) as number;
-          const offset = this.getNodeParameter('offset', i) as number;
-
-          const params = new URLSearchParams();
-          if (recipient) params.append('recipient', recipient);
-          if (avs) params.append('avs', avs);
-          if (limit) params.append('limit', limit.toString());
-          if (offset) params.append('offset', offset.toString());
-
-          const queryString = params.toString();
-          const url = `${credentials.baseUrl}/rewards${queryString ? '?' + queryString : ''}`;
-
-          const options: any = {
-            method: 'GET',
-            url,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getAddressRewards': {
-          const address = this.getNodeParameter('address', i) as string;
-          const epoch = this.getNodeParameter('epoch', i) as number;
-
-          const params = new URLSearchParams();
-          if (epoch) params.append('epoch', epoch.toString());
-
-          const queryString = params.toString();
-          const url = `${credentials.baseUrl}/rewards/${address}${queryString ? '?' + queryString : ''}`;
-
-          const options: any = {
-            method: 'GET',
-            url,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getRewardDistributions': {
-          const avs = this.getNodeParameter('avs', i) as string;
-          const epoch = this.getNodeParameter('epoch', i) as number;
-
-          const params = new URLSearchParams();
-          if (avs) params.append('avs', avs);
-          if (epoch) params.append('epoch', epoch.toString());
-
-          const queryString = params.toString();
-          const url = `${credentials.baseUrl}/rewards/distributions${queryString ? '?' + queryString : ''}`;
-
-          const options: any = {
-            method: 'GET',
-            url,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getRewardClaims': {
-          const recipient = this.getNodeParameter('recipient', i) as string;
-          const status = this.getNodeParameter('status', i) as string;
-
-          const params = new URLSearchParams();
-          if (recipient) params.append('recipient', recipient);
-          if (status) params.append('status', status);
-
-          const queryString = params.toString();
-          const url = `${credentials.baseUrl}/rewards/claims${queryString ? '?' + queryString : ''}`;
-
-          const options: any = {
-            method: 'GET',
-            url,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        default:
-          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
-      }
-
-      returnData.push({
-        json: result,
-        pairedItem: { item: i },
-      });
-
-    } catch (error: any) {
-      if (this.continueOnFail()) {
-        returnData.push({
-          json: { error: error.message },
-          pairedItem: { item: i },
-        });
-      } else {
-        throw new NodeApiError(this.getNode(), error);
-      }
-    }
-  }
-
-  return returnData;
-}
+          const queryString = '?' + new URLSearchParams(queryParams).toString();
